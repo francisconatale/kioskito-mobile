@@ -14,6 +14,8 @@ export const SaleModal = ({
     onClearCart
 }) => {
     const [newSale, setNewSale] = useState({ productId: "", quantity: "1" })
+    const [metodoPago, setMetodoPago] = useState("efectivo")
+    const [clienteId, setClienteId] = useState(null)
 
     const handleAddToCart = () => {
         const success = onAddToCart(newSale.productId, newSale.quantity)
@@ -23,9 +25,11 @@ export const SaleModal = ({
     }
 
     const handleCompleteSale = () => {
-        const success = onCompleteSale()
-        if (success) {
+        const result = onCompleteSale(metodoPago, clienteId)
+        if (result && result.success) {
             setNewSale({ productId: "", quantity: "1" })
+            setMetodoPago("efectivo")
+            setClienteId(null)
             onClose()
         }
     }
@@ -135,6 +139,36 @@ export const SaleModal = ({
                                         <Text style={{ color: 'white', fontWeight: 'bold', marginLeft: 4 }}>Agregar</Text>
                                     </View>
                                 </TouchableOpacity>
+                            </View>
+                        </View>
+
+                        <View style={{ marginBottom: 24 }}>
+                            <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 }}>Método de Pago</Text>
+                            <View style={{ flexDirection: 'row', gap: 8 }}>
+                                {['efectivo', 'tarjeta', 'transferencia'].map((metodo) => (
+                                    <TouchableOpacity
+                                        key={metodo}
+                                        style={{
+                                            flex: 1,
+                                            padding: 10,
+                                            borderRadius: 8,
+                                            borderWidth: 1,
+                                            borderColor: metodoPago === metodo ? '#3b82f6' : '#e5e7eb',
+                                            backgroundColor: metodoPago === metodo ? '#eff6ff' : 'white',
+                                            alignItems: 'center'
+                                        }}
+                                        onPress={() => setMetodoPago(metodo)}
+                                    >
+                                        <Text style={{
+                                            fontSize: 12,
+                                            fontWeight: '600',
+                                            color: metodoPago === metodo ? '#3b82f6' : '#6b7280',
+                                            textTransform: 'capitalize'
+                                        }}>
+                                            {metodo}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
                             </View>
                         </View>
 

@@ -1,27 +1,33 @@
 import { useState, useEffect } from "react"
-import { productosAPI } from "../services/api"
+import { productosAPI, ventasAPI } from "../services/api"
+import { Alert } from "react-native"
 
 export const useBusinessData = () => {
     const [products, setProducts] = useState([])
+    const [sales, setSales] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
-
-    const [sales, setSales] = useState([
-        {
-            id: "1",
-            items: [
-                { productId: "1", productName: "Producto A", price: 100, quantity: 2, subtotal: 200 }
-            ],
-            total: 200,
-            date: new Date()
-        },
-    ])
 
     const [saleCart, setSaleCart] = useState([])
 
     useEffect(() => {
-        fetchProducts()
+        fetchData()
     }, [])
+
+    const fetchData = async () => {
+        setLoading(true)
+        await Promise.all([fetchProducts(), fetchSales()])
+        setLoading(false)
+    }
+
+    const fetchSales = async () => {
+        try {
+            const data = await ventasAPI.getAll()
+            setSales(data)
+        } catch (err) {
+            console.error("Error al cargar ventas:", err.message)
+        }
+    }
 
     const fetchProducts = async () => {
         try {
@@ -94,6 +100,16 @@ export const useBusinessData = () => {
         }
     }
 
+    const handleDeleteSale = async (id) => {
+        try {
+            await ventasAPI.delete(id)
+            await Promise.all([fetchSales(), fetchProducts()])
+            return { success: true, message: "Venta eliminada correctamente" }
+        } catch (err) {
+            return { success: false, message: `No se pudo eliminar la venta: ${err.message}` }
+        }
+    }
+
     const handleAddToCart = (productId, quantity) => {
         if (!productId || !quantity) {
             Alert.alert("Error", "Por favor selecciona un producto y cantidad")
@@ -162,7 +178,7 @@ export const useBusinessData = () => {
     }
 
     const addProductToCartByBarcode = (barcode) => {
-        const product = products.find((p) => p.barcode === barcode)
+        const product = products.find((p) => p.codigoBarras === barcode)
         if (product) {
             const existingItem = saleCart.find(item => item.productId === product.id)
             if (existingItem) {
@@ -188,38 +204,39 @@ export const useBusinessData = () => {
         }
     }
 
-    const handleCompleteSale = () => {
+    const handleCompleteSale = async (metodoPago = "efectivo", clienteId = null) => {
         if (saleCart.length === 0) {
             Alert.alert("Error", "Agrega productos a la venta")
-            return false
+            return { success: false, message: "El carrito está vacío" }
         }
 
-        for (const item of saleCart) {
-            const product = products.find(p => p.id === item.productId)
-            if (item.quantity > product.stock) {
-                Alert.alert("Error", `Stock insuficiente para ${item.productName}`)
-                return false
+        try {
+            setLoading(true)
+            const total = saleCart.reduce((sum, item) => sum + item.subtotal, 0)
+
+            const ventaRequest = {
+                fecha: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+                montoTotal: total,
+                metodoPago: metodoPago,
+                clienteId: clienteId,
+                detalles: saleCart.map(item => ({
+                    productoId: item.productId,
+                    cantidad: item.quantity,
+                    precioUnitario: item.price
+                }))
             }
+
+            await ventasAPI.create(ventaRequest)
+
+            await Promise.all([fetchSales(), fetchProducts()])
+            setSaleCart([])
+            return { success: true, message: "Venta registrada correctamente" }
+        } catch (err) {
+            console.error("Error al completar venta:", err)
+            return { success: false, message: `Error al registrar venta: ${err.message}` }
+        } finally {
+            setLoading(false)
         }
-
-        const sale = {
-            id: Date.now().toString(),
-            items: saleCart,
-            total: saleCart.reduce((sum, item) => sum + item.subtotal, 0),
-            date: new Date(),
-        }
-
-        setSales([...sales, sale])
-
-        // Update stock for all products
-        setProducts(products.map((p) => {
-            const cartItem = saleCart.find(item => item.productId === p.id)
-            return cartItem ? { ...p, stock: p.stock - cartItem.quantity } : p
-        }))
-
-        setSaleCart([])
-        Alert.alert("Éxito", "Venta registrada correctamente")
-        return true
     }
 
     return {
@@ -229,9 +246,11 @@ export const useBusinessData = () => {
         loading,
         error,
         fetchProducts,
+        fetchSales,
         handleAddProduct,
         handleUpdateProduct,
         handleDeleteProduct,
+        handleDeleteSale,
         handleAddToCart,
         handleRemoveFromCart,
         handleUpdateCartQuantity,

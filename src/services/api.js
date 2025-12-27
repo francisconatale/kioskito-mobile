@@ -47,6 +47,30 @@ const mapProductoFromBackend = (producto) => {
     }
 }
 
+// Map backend venta format to frontend format
+const mapVentaFromBackend = (venta) => {
+    if (!venta) return null
+
+    const mapSingleVenta = (v) => ({
+        ...v,
+        total: v.montoTotal,
+        date: v.fecha,
+        items: (v.detalles || []).map(d => ({
+            productId: d.productoId,
+            productName: d.productoNombre,
+            price: d.precioUnitario,
+            quantity: d.cantidad,
+            subtotal: d.subtotal
+        }))
+    })
+
+    if (Array.isArray(venta)) {
+        return venta.map(mapSingleVenta)
+    }
+
+    return mapSingleVenta(venta)
+}
+
 // Products API
 export const productosAPI = {
     // GET /api/productos
@@ -132,12 +156,14 @@ export const productosAPI = {
 export const ventasAPI = {
     // GET /api/ventas
     getAll: async () => {
-        return await apiRequest('/ventas')
+        const data = await apiRequest('/ventas')
+        return mapVentaFromBackend(data)
     },
 
     // GET /api/ventas/{id}
     getById: async (id) => {
-        return await apiRequest(`/ventas/${id}`)
+        const data = await apiRequest(`/ventas/${id}`)
+        return mapVentaFromBackend(data)
     },
 
     // GET /api/ventas/fecha?inicio={date}&fin={date}
@@ -152,17 +178,31 @@ export const ventasAPI = {
 
     // POST /api/ventas
     create: async (venta) => {
+        const backendVenta = {
+            fecha: venta.fecha,
+            montoTotal: venta.montoTotal,
+            metodoPago: venta.metodoPago,
+            clienteId: venta.clienteId,
+            detalles: venta.detalles // Expecting { productoId, cantidad, precioUnitario }
+        }
         return await apiRequest('/ventas', {
             method: 'POST',
-            body: JSON.stringify(venta),
+            body: JSON.stringify(backendVenta),
         })
     },
 
     // PUT /api/ventas/{id}
     update: async (id, venta) => {
+        const backendVenta = {
+            fecha: venta.fecha,
+            montoTotal: venta.montoTotal,
+            metodoPago: venta.metodoPago,
+            clienteId: venta.clienteId,
+            detalles: venta.detalles
+        }
         return await apiRequest(`/ventas/${id}`, {
             method: 'PUT',
-            body: JSON.stringify(venta),
+            body: JSON.stringify(backendVenta),
         })
     },
 
