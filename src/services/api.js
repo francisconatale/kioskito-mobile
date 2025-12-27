@@ -73,6 +73,16 @@ export const productosAPI = {
             method: 'DELETE',
         })
     },
+
+    // GET /api/productos/codigo-barra/{codigoBarra}
+    getByBarcode: async (codigoBarra) => {
+        return await apiRequest(`/productos/codigo-barra/${codigoBarra}`)
+    },
+
+    // GET /api/productos/barcode-lookup/{code}
+    lookupBarcode: async (code) => {
+        return await apiRequest(`/productos/barcode-lookup/${code}`)
+    },
 }
 
 // Ventas API

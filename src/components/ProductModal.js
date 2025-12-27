@@ -1,10 +1,71 @@
-import { useState } from "react"
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal } from "react-native"
+import { useState, useEffect } from "react"
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal, ActivityIndicator } from "react-native"
 import { Ionicons } from '@expo/vector-icons'
+import { productosAPI } from '../services/api'
 
 export const ProductModal = ({ visible, onClose, onAddProduct, onShowBarcodeScanner }) => {
     const [newProduct, setNewProduct] = useState({ nombre: "", precio: "", stock: "", descripcion: "", codigoBarras: "" })
     const [error, setError] = useState("")
+    const [loadingBarcode, setLoadingBarcode] = useState(false)
+    const [barcodeInfo, setBarcodeInfo] = useState("")
+
+    // Debounced barcode lookup
+    useEffect(() => {
+        const lookupBarcode = async () => {
+            const barcode = newProduct.codigoBarras?.trim()
+
+            // Only lookup if barcode has at least 8 digits
+            if (!barcode || barcode.length < 8) {
+                setBarcodeInfo("")
+                return
+            }
+
+            setLoadingBarcode(true)
+            setBarcodeInfo("")
+
+            try {
+                // Try local database first
+                try {
+                    const localProduct = await productosAPI.getByBarcode(barcode)
+                    if (localProduct) {
+                        setBarcodeInfo("✓ Producto encontrado en base de datos local")
+                        // Don't auto-fill from local DB to avoid conflicts
+                        setLoadingBarcode(false)
+                        return
+                    }
+                } catch (err) {
+                    // Local product not found, continue to OpenFoodFacts
+                }
+
+                // Try OpenFoodFacts API
+                const foodData = await productosAPI.lookupBarcode(barcode)
+                if (foodData && foodData.name) {
+                    // Auto-fill fields from OpenFoodFacts
+                    setNewProduct(prev => ({
+                        ...prev,
+                        nombre: prev.nombre || foodData.name,
+                        descripcion: prev.descripcion || [
+                            foodData.brand,
+                            foodData.description,
+                            foodData.category
+                        ].filter(Boolean).join(' - '),
+                    }))
+                    setBarcodeInfo(`✓ Datos cargados: ${foodData.brand || foodData.name}`)
+                } else {
+                    setBarcodeInfo("⚠ Código de barras no encontrado")
+                }
+            } catch (err) {
+                console.error("Error al buscar código de barras:", err)
+                setBarcodeInfo("⚠ No se pudo buscar el código de barras")
+            } finally {
+                setLoadingBarcode(false)
+            }
+        }
+
+        // Debounce the lookup by 800ms
+        const timeoutId = setTimeout(lookupBarcode, 800)
+        return () => clearTimeout(timeoutId)
+    }, [newProduct.codigoBarras])
 
     const handleSave = async () => {
         setError("") // Clear previous errors
@@ -19,6 +80,8 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onShowBarcodeScan
 
     const handleClose = () => {
         setError("")
+        setBarcodeInfo("")
+        setLoadingBarcode(false)
         setNewProduct({ nombre: "", precio: "", stock: "", descripcion: "", codigoBarras: "" })
         onClose()
     }
@@ -78,13 +141,30 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onShowBarcodeScan
                         <View style={{ marginBottom: 16 }}>
                             <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 }}>Código de barras</Text>
                             <View style={{ flexDirection: 'row', gap: 8 }}>
-                                <TextInput
-                                    style={{ flex: 1, backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, color: '#111827' }}
-                                    placeholder="Escanea o ingresa manualmente"
-                                    value={newProduct.codigoBarras}
-                                    onChangeText={(text) => setNewProduct({ ...newProduct, codigoBarras: text })}
-                                    keyboardType="numeric"
-                                />
+                                <View style={{ flex: 1 }}>
+                                    <TextInput
+                                        style={{ backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, color: '#111827' }}
+                                        placeholder="Escanea o ingresa manualmente"
+                                        value={newProduct.codigoBarras}
+                                        onChangeText={(text) => setNewProduct({ ...newProduct, codigoBarras: text })}
+                                        keyboardType="numeric"
+                                    />
+                                    {loadingBarcode && (
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
+                                            <ActivityIndicator size="small" color="#3b82f6" />
+                                            <Text style={{ fontSize: 12, color: '#6b7280', marginLeft: 6 }}>Buscando...</Text>
+                                        </View>
+                                    )}
+                                    {!loadingBarcode && barcodeInfo && (
+                                        <Text style={{
+                                            fontSize: 12,
+                                            color: barcodeInfo.startsWith('✓') ? '#10b981' : '#f59e0b',
+                                            marginTop: 6
+                                        }}>
+                                            {barcodeInfo}
+                                        </Text>
+                                    )}
+                                </View>
                                 <TouchableOpacity
                                     style={{ backgroundColor: '#3b82f6', padding: 12, borderRadius: 8, justifyContent: 'center', alignItems: 'center', minWidth: 50 }}
                                     onPress={() => onShowBarcodeScanner('product', (code) => setNewProduct({ ...newProduct, codigoBarras: code }))}
