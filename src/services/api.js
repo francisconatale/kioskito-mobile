@@ -29,41 +29,83 @@ const apiRequest = async (endpoint, options = {}) => {
     }
 }
 
+// Map backend producto format to frontend format
+const mapProductoFromBackend = (producto) => {
+    if (!producto) return null
+
+    // Handle both single object and array
+    if (Array.isArray(producto)) {
+        return producto.map(p => ({
+            ...p,
+            codigoBarras: p.codigoBarra || p.codigoBarras,
+        }))
+    }
+
+    return {
+        ...producto,
+        codigoBarras: producto.codigoBarra || producto.codigoBarras,
+    }
+}
+
 // Products API
 export const productosAPI = {
     // GET /api/productos
     getAll: async () => {
-        return await apiRequest('/productos')
+        const productos = await apiRequest('/productos')
+        return mapProductoFromBackend(productos)
     },
 
     // GET /api/productos/{id}
     getById: async (id) => {
-        return await apiRequest(`/productos/${id}`)
+        const producto = await apiRequest(`/productos/${id}`)
+        return mapProductoFromBackend(producto)
     },
 
     // GET /api/productos/buscar?q={search}
     search: async (query) => {
-        return await apiRequest(`/productos/buscar?q=${encodeURIComponent(query)}`)
+        const productos = await apiRequest(`/productos/buscar?q=${encodeURIComponent(query)}`)
+        return mapProductoFromBackend(productos)
     },
 
     // GET /api/productos/stock-bajo?threshold={number}
     getLowStock: async (threshold = 10) => {
-        return await apiRequest(`/productos/stock-bajo?threshold=${threshold}`)
+        const productos = await apiRequest(`/productos/stock-bajo?threshold=${threshold}`)
+        return mapProductoFromBackend(productos)
     },
 
     // POST /api/productos
     create: async (producto) => {
+        // Map frontend field names to backend field names
+        const backendProducto = {
+            nombre: producto.nombre,
+            descripcion: producto.descripcion,
+            precio: producto.precio,
+            stock: producto.stock,
+            codigoBarra: producto.codigoBarras, // Spring Boot Jackson format
+            marca: producto.marca,
+        }
+
         return await apiRequest('/productos', {
             method: 'POST',
-            body: JSON.stringify(producto),
+            body: JSON.stringify(backendProducto),
         })
     },
 
     // PUT /api/productos/{id}
     update: async (id, producto) => {
+        // Map frontend field names to backend field names
+        const backendProducto = {
+            nombre: producto.nombre,
+            descripcion: producto.descripcion,
+            precio: producto.precio,
+            stock: producto.stock,
+            codigoBarra: producto.codigoBarras, // Spring Boot Jackson format
+            marca: producto.marca,
+        }
+
         return await apiRequest(`/productos/${id}`, {
             method: 'PUT',
-            body: JSON.stringify(producto),
+            body: JSON.stringify(backendProducto),
         })
     },
 
@@ -76,7 +118,8 @@ export const productosAPI = {
 
     // GET /api/productos/codigo-barra/{codigoBarra}
     getByBarcode: async (codigoBarra) => {
-        return await apiRequest(`/productos/codigo-barra/${codigoBarra}`)
+        const producto = await apiRequest(`/productos/codigo-barra/${codigoBarra}`)
+        return mapProductoFromBackend(producto)
     },
 
     // GET /api/productos/barcode-lookup/{code}
