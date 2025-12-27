@@ -2,15 +2,15 @@ import { useState } from "react"
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal } from "react-native"
 import { Ionicons } from '@expo/vector-icons'
 
-export const ProductModal = ({ visible, onClose, onAddProduct }) => {
-    const [newProduct, setNewProduct] = useState({ nombre: "", precio: "", stock: "", descripcion: "" })
+export const ProductModal = ({ visible, onClose, onAddProduct, onShowBarcodeScanner }) => {
+    const [newProduct, setNewProduct] = useState({ nombre: "", precio: "", stock: "", descripcion: "", codigoBarras: "" })
     const [error, setError] = useState("")
 
     const handleSave = async () => {
         setError("") // Clear previous errors
         const result = await onAddProduct(newProduct)
         if (result.success) {
-            setNewProduct({ nombre: "", precio: "", stock: "", descripcion: "" })
+            setNewProduct({ nombre: "", precio: "", stock: "", descripcion: "", codigoBarras: "" })
             onClose()
         } else {
             setError(result.message)
@@ -19,7 +19,7 @@ export const ProductModal = ({ visible, onClose, onAddProduct }) => {
 
     const handleClose = () => {
         setError("")
-        setNewProduct({ nombre: "", precio: "", stock: "", descripcion: "" })
+        setNewProduct({ nombre: "", precio: "", stock: "", descripcion: "", codigoBarras: "" })
         onClose()
     }
 
@@ -73,6 +73,25 @@ export const ProductModal = ({ visible, onClose, onAddProduct }) => {
                                 multiline
                                 numberOfLines={2}
                             />
+                        </View>
+
+                        <View style={{ marginBottom: 16 }}>
+                            <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 }}>Código de barras</Text>
+                            <View style={{ flexDirection: 'row', gap: 8 }}>
+                                <TextInput
+                                    style={{ flex: 1, backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, color: '#111827' }}
+                                    placeholder="Escanea o ingresa manualmente"
+                                    value={newProduct.codigoBarras}
+                                    onChangeText={(text) => setNewProduct({ ...newProduct, codigoBarras: text })}
+                                    keyboardType="numeric"
+                                />
+                                <TouchableOpacity
+                                    style={{ backgroundColor: '#3b82f6', padding: 12, borderRadius: 8, justifyContent: 'center', alignItems: 'center', minWidth: 50 }}
+                                    onPress={() => onShowBarcodeScanner('product', (code) => setNewProduct({ ...newProduct, codigoBarras: code }))}
+                                >
+                                    <Ionicons name="barcode-outline" size={24} color="#fff" />
+                                </TouchableOpacity>
+                            </View>
                         </View>
 
                         <View style={{ marginBottom: 16 }}>

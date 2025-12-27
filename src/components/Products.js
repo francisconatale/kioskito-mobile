@@ -30,7 +30,13 @@ export const Products = ({ products, loading, onShowProductModal, onDeleteProduc
                                 <View style={{ flex: 1 }}>
                                     <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#111827' }}>{product.nombre}</Text>
                                     {product.descripcion && (
-                                        <Text style={{ fontSize: 14, color: '#6b7280', marginBottom: 8 }}>{product.descripcion}</Text>
+                                        <Text style={{ fontSize: 14, color: '#6b7280', marginBottom: 4 }}>{product.descripcion}</Text>
+                                    )}
+                                    {product.codigoBarras && (
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                                            <Ionicons name="barcode-outline" size={14} color="#6b7280" style={{ marginRight: 4 }} />
+                                            <Text style={{ fontSize: 12, color: '#6b7280' }}>{product.codigoBarras}</Text>
+                                        </View>
                                     )}
                                     <View style={{ flexDirection: 'row', gap: 16, marginTop: 8 }}>
                                         <View>

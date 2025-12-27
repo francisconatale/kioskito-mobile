@@ -127,6 +127,7 @@ const App = () => {
         visible={showProductModal}
         onClose={() => setShowProductModal(false)}
         onAddProduct={handleAddProductWrapper}
+        onShowBarcodeScanner={handleShowBarcodeScanner}
       />
 
       <SaleModal
