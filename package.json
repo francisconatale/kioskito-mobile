@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "expo": "~54.0.30",
+    "expo-camera": "~17.0.10",
     "expo-status-bar": "~3.0.9",
     "lucide-react": "^0.562.0",
     "nativewind": "^4.2.1",

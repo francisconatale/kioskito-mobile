@@ -19,6 +19,7 @@ const App = () => {
   const [scanMode, setScanMode] = useState("product")
   const [barcodeCallback, setBarcodeCallback] = useState(null)
   const [confirmDialog, setConfirmDialog] = useState({ visible: false, productId: null })
+  const [selectedProduct, setSelectedProduct] = useState(null)
   const [toast, setToast] = useState({ visible: false, message: "", type: "success" })
 
   const {
@@ -27,6 +28,7 @@ const App = () => {
     saleCart,
     loading,
     handleAddProduct,
+    handleUpdateProduct,
     handleDeleteProduct,
     handleAddToCart,
     handleRemoveFromCart,
@@ -36,6 +38,11 @@ const App = () => {
     handleCompleteSale,
   } = useBusinessData()
 
+  const handleShowProductModal = (product = null) => {
+    setSelectedProduct(product)
+    setShowProductModal(true)
+  }
+
   const handleShowBarcodeScanner = (mode, callback = null) => {
     setScanMode(mode)
     setBarcodeCallback(() => callback)
@@ -43,8 +50,14 @@ const App = () => {
   }
 
   const handleBarcodeScan = (scannedCode) => {
-    if (scanMode === "product" && barcodeCallback) {
-      barcodeCallback(scannedCode)
+    if (scanMode === "product") {
+      if (barcodeCallback) {
+        barcodeCallback(scannedCode)
+      } else {
+        // Search if product exists to edit, otherwise open new
+        const product = products.find(p => p.codigoBarras === scannedCode)
+        handleShowProductModal(product || { codigoBarras: scannedCode })
+      }
     } else if (scanMode === "sale") {
       addProductToCartByBarcode(scannedCode)
     }
@@ -77,16 +90,24 @@ const App = () => {
     return result
   }
 
+  const handleUpdateProductWrapper = async (id, product) => {
+    const result = await handleUpdateProduct(id, product)
+    if (result.success) {
+      showToast(result.message, "success")
+    }
+    return result
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f9fafb' }}>
       <View style={{ backgroundColor: 'white', padding: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <View>
-            <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#111827' }}>Mi Negocio</Text>
+            <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#111827' }}>Kioskito</Text>
             <Text style={{ color: '#6b7280' }}>Sistema de gestión</Text>
           </View>
           <View style={{ width: 48, height: 48, backgroundColor: '#3b82f6', borderRadius: 24, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 18 }}>MN</Text>
+            <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 18 }}>K</Text>
           </View>
         </View>
       </View>
@@ -103,8 +124,10 @@ const App = () => {
         <Products
           products={products}
           loading={loading}
-          onShowProductModal={() => setShowProductModal(true)}
+          onShowProductModal={() => handleShowProductModal()}
+          onEditProduct={handleShowProductModal}
           onDeleteProduct={handleDeleteProductRequest}
+          onShowBarcodeScanner={() => handleShowBarcodeScanner("product")}
         />
       )}
       {activeTab === "sales" && (
@@ -125,9 +148,14 @@ const App = () => {
 
       <ProductModal
         visible={showProductModal}
-        onClose={() => setShowProductModal(false)}
+        onClose={() => {
+          setShowProductModal(false)
+          setSelectedProduct(null)
+        }}
         onAddProduct={handleAddProductWrapper}
+        onUpdateProduct={handleUpdateProductWrapper}
         onShowBarcodeScanner={handleShowBarcodeScanner}
+        initialProduct={selectedProduct}
       />
 
       <SaleModal

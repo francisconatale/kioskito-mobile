@@ -3,11 +3,27 @@ import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal, ActivityInd
 import { Ionicons } from '@expo/vector-icons'
 import { productosAPI } from '../services/api'
 
-export const ProductModal = ({ visible, onClose, onAddProduct, onShowBarcodeScanner }) => {
+export const ProductModal = ({ visible, onClose, onAddProduct, onUpdateProduct, onShowBarcodeScanner, initialProduct }) => {
     const [newProduct, setNewProduct] = useState({ nombre: "", precio: "", stock: "", descripcion: "", codigoBarras: "", marca: "" })
     const [error, setError] = useState("")
     const [loadingBarcode, setLoadingBarcode] = useState(false)
     const [barcodeInfo, setBarcodeInfo] = useState("")
+
+    useEffect(() => {
+        if (initialProduct) {
+            setNewProduct({
+                nombre: initialProduct.nombre || "",
+                precio: initialProduct.precio?.toString() || "",
+                stock: initialProduct.stock?.toString() || "",
+                descripcion: initialProduct.descripcion || "",
+                codigoBarras: initialProduct.codigoBarras || "",
+                marca: initialProduct.marca || "",
+                id: initialProduct.id
+            })
+        } else {
+            setNewProduct({ nombre: "", precio: "", stock: "", descripcion: "", codigoBarras: "", marca: "" })
+        }
+    }, [initialProduct, visible])
 
     // Debounced barcode lookup
     useEffect(() => {
@@ -65,8 +81,14 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onShowBarcodeScan
     }, [newProduct.codigoBarras])
 
     const handleSave = async () => {
-        setError("") // Clear previous errors
-        const result = await onAddProduct(newProduct)
+        setError("")
+        let result
+        if (newProduct.id) {
+            result = await onUpdateProduct(newProduct.id, newProduct)
+        } else {
+            result = await onAddProduct(newProduct)
+        }
+
         if (result.success) {
             setNewProduct({ nombre: "", precio: "", stock: "", descripcion: "", codigoBarras: "", marca: "" })
             onClose()
@@ -84,11 +106,31 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onShowBarcodeScan
     }
 
     return (
-        <Modal visible={visible} animationType="slide" transparent={true}>
-            <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
-                <View style={{ backgroundColor: 'white', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24 }}>
+        <Modal visible={visible} animationType="fade" transparent={true}>
+            <View style={{
+                flex: 1,
+                backgroundColor: 'rgba(0,0,0,0.5)',
+                justifyContent: 'center',
+                alignItems: 'center',
+                padding: 20
+            }}>
+                <View style={{
+                    backgroundColor: 'white',
+                    borderRadius: 16,
+                    padding: 24,
+                    width: '100%',
+                    maxWidth: 500,
+                    maxHeight: '90%',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.25,
+                    shadowRadius: 4,
+                    elevation: 5
+                }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#111827' }}>Nuevo Producto</Text>
+                        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#111827' }}>
+                            {initialProduct ? 'Editar Producto' : 'Nuevo Producto'}
+                        </Text>
                         <TouchableOpacity onPress={handleClose}>
                             <Ionicons name="close" size={24} color="#6b7280" />
                         </TouchableOpacity>
@@ -112,7 +154,7 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onShowBarcodeScan
                         </View>
                     )}
 
-                    <ScrollView>
+                    <ScrollView showsVerticalScrollIndicator={false}>
                         <View style={{ marginBottom: 16 }}>
                             <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 }}>Nombre del producto *</Text>
                             <TextInput
@@ -203,10 +245,12 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onShowBarcodeScan
                             />
                         </View>
 
-                        <TouchableOpacity style={{ backgroundColor: '#3b82f6', padding: 16, borderRadius: 8, alignItems: 'center' }} onPress={handleSave}>
+                        <TouchableOpacity style={{ backgroundColor: '#3b82f6', padding: 16, borderRadius: 8, alignItems: 'center', marginBottom: 16 }} onPress={handleSave}>
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                 <Ionicons name="save-outline" size={20} color="#fff" />
-                                <Text style={{ color: 'white', fontWeight: 'bold', marginLeft: 8 }}>Guardar Producto</Text>
+                                <Text style={{ color: 'white', fontWeight: 'bold', marginLeft: 8 }}>
+                                    {initialProduct ? 'Actualizar Producto' : 'Guardar Producto'}
+                                </Text>
                             </View>
                         </TouchableOpacity>
                     </ScrollView>
@@ -214,4 +258,20 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onShowBarcodeScan
             </View>
         </Modal>
     )
+}
+
+const styles = {
+    modalContent: {
+        backgroundColor: 'white',
+        borderRadius: 16,
+        padding: 24,
+        width: '100%',
+        maxWidth: 500,
+        maxHeight: '90%',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5,
+    }
 }

@@ -61,6 +61,29 @@ export const useBusinessData = () => {
         }
     }
 
+    const handleUpdateProduct = async (id, updatedProduct) => {
+        if (!updatedProduct.nombre || !updatedProduct.precio || updatedProduct.stock === undefined) {
+            return { success: false, message: "Por favor completa todos los campos obligatorios" }
+        }
+
+        try {
+            const producto = {
+                nombre: updatedProduct.nombre,
+                descripcion: updatedProduct.descripcion || "",
+                precio: parseFloat(updatedProduct.precio),
+                stock: parseInt(updatedProduct.stock),
+                codigoBarras: updatedProduct.codigoBarras || null,
+                marca: updatedProduct.marca || null,
+            }
+
+            await productosAPI.update(id, producto)
+            await fetchProducts()
+            return { success: true, message: "Producto actualizado correctamente" }
+        } catch (err) {
+            return { success: false, message: `No se pudo actualizar el producto: ${err.message}` }
+        }
+    }
+
     const handleDeleteProduct = async (id) => {
         try {
             await productosAPI.delete(id)
@@ -207,6 +230,7 @@ export const useBusinessData = () => {
         error,
         fetchProducts,
         handleAddProduct,
+        handleUpdateProduct,
         handleDeleteProduct,
         handleAddToCart,
         handleRemoveFromCart,
