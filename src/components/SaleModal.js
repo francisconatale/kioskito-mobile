@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal } from "react-native"
-import { Ionicons } from '@expo/vector-icons'
+import { Ionicons, Feather } from '@expo/vector-icons'
 
 export const SaleModal = ({
     visible,
@@ -116,13 +116,28 @@ export const SaleModal = ({
                                 {products.map((product) => (
                                     <TouchableOpacity
                                         key={product.id}
-                                        style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6', backgroundColor: newSale.productId === product.id ? '#eff6ff' : 'transparent' }}
+                                        style={{
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            padding: 12,
+                                            borderBottomWidth: 1,
+                                            borderBottomColor: '#f3f4f6',
+                                            backgroundColor: newSale.productId === product.id ? '#eff6ff' : 'transparent'
+                                        }}
                                         onPress={() => setNewSale({ ...newSale, productId: product.id })}
                                     >
-                                        <Text style={{ fontWeight: '600', color: '#111827' }}>{product.nombre}</Text>
-                                        <Text style={{ fontSize: 14, color: '#6b7280' }}>
-                                            ${product.precio} - Stock: {product.stock}
-                                        </Text>
+                                        <View style={{ width: 32, height: 32, backgroundColor: '#f3f4f6', borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                                            <Feather name="package" size={16} color="#3b82f6" />
+                                        </View>
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={{ fontWeight: '600', color: '#111827' }}>{product.nombre}</Text>
+                                            <Text style={{ fontSize: 13, color: '#6b7280' }}>
+                                                ${product.precio} • Stock: {product.stock}
+                                            </Text>
+                                        </View>
+                                        {newSale.productId === product.id && (
+                                            <Ionicons name="checkmark-circle" size={20} color="#3b82f6" />
+                                        )}
                                     </TouchableOpacity>
                                 ))}
                             </ScrollView>

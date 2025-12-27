@@ -1,6 +1,6 @@
 import React from "react"
 import { View, Text, ScrollView, TouchableOpacity, Modal } from "react-native"
-import { Ionicons } from '@expo/vector-icons'
+import { Ionicons, Feather } from '@expo/vector-icons'
 
 export const SaleDetailsModal = ({ visible, onClose, sale }) => {
     if (!sale) return null
@@ -58,16 +58,23 @@ export const SaleDetailsModal = ({ visible, onClose, sale }) => {
                     <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827', marginBottom: 12 }}>Productos</Text>
                     <ScrollView style={{ marginBottom: 20 }}>
                         {sale.items.map((item, index) => (
-                            <View key={index} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}>
-                                <View style={{ flex: 1 }}>
-                                    <Text style={{ fontWeight: '600', color: '#374151' }}>{item.productName}</Text>
-                                    <Text style={{ fontSize: 14, color: '#6b7280' }}>
-                                        {item.quantity} x ${item.price}
-                                    </Text>
+                            <View key={index} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}>
+                                <View style={{ width: 36, height: 36, backgroundColor: '#f3f6ff', borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                                    <Feather name="package" size={18} color="#3b82f6" />
                                 </View>
-                                <Text style={{ fontWeight: 'bold', color: '#111827', alignSelf: 'center' }}>
-                                    ${item.subtotal}
-                                </Text>
+                                <View style={{ flex: 1 }}>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <View>
+                                            <Text style={{ fontWeight: '600', color: '#374151' }}>{item.productName}</Text>
+                                            <Text style={{ fontSize: 14, color: '#6b7280' }}>
+                                                {item.quantity} x ${item.price}
+                                            </Text>
+                                        </View>
+                                        <Text style={{ fontWeight: 'bold', color: '#111827' }}>
+                                            ${item.subtotal}
+                                        </Text>
+                                    </View>
+                                </View>
                             </View>
                         ))}
                     </ScrollView>
