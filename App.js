@@ -6,6 +6,7 @@ import { Sales } from "./src/components/Sales"
 import { Analytics } from "./src/components/Analytics"
 import { ProductModal } from "./src/components/ProductModal"
 import { SaleModal } from "./src/components/SaleModal"
+import { SaleDetailsModal } from "./src/components/SaleDetailsModal"
 import { BarcodeScanner } from "./src/components/BarcodeScanner"
 import { BottomNavigation } from "./src/components/BottomNavigation"
 import { ConfirmDialog } from "./src/components/ConfirmDialog"
@@ -15,11 +16,13 @@ const App = () => {
   const [activeTab, setActiveTab] = useState("dashboard")
   const [showProductModal, setShowProductModal] = useState(false)
   const [showSaleModal, setShowSaleModal] = useState(false)
+  const [showSaleDetailsModal, setShowSaleDetailsModal] = useState(false)
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false)
   const [scanMode, setScanMode] = useState("product")
   const [barcodeCallback, setBarcodeCallback] = useState(null)
   const [confirmDialog, setConfirmDialog] = useState({ visible: false, productId: null })
   const [selectedProduct, setSelectedProduct] = useState(null)
+  const [selectedSale, setSelectedSale] = useState(null)
   const [toast, setToast] = useState({ visible: false, message: "", type: "success" })
 
   const {
@@ -41,6 +44,11 @@ const App = () => {
   const handleShowProductModal = (product = null) => {
     setSelectedProduct(product)
     setShowProductModal(true)
+  }
+
+  const handleShowSaleDetails = (sale) => {
+    setSelectedSale(sale)
+    setShowSaleDetailsModal(true)
   }
 
   const handleShowBarcodeScanner = (mode, callback = null) => {
@@ -118,6 +126,7 @@ const App = () => {
           sales={sales}
           onShowProductModal={() => setShowProductModal(true)}
           onShowSaleModal={() => setShowSaleModal(true)}
+          onShowSaleDetails={handleShowSaleDetails}
         />
       )}
       {activeTab === "products" && (
@@ -135,6 +144,7 @@ const App = () => {
           sales={sales}
           onShowSaleModal={() => setShowSaleModal(true)}
           onShowBarcodeScanner={() => handleShowBarcodeScanner("sale")}
+          onShowSaleDetails={handleShowSaleDetails}
         />
       )}
       {activeTab === "analytics" && (
@@ -168,6 +178,16 @@ const App = () => {
         onUpdateCartQuantity={handleUpdateCartQuantity}
         onCompleteSale={handleCompleteSale}
         onClearCart={clearCart}
+        onShowBarcodeScanner={handleShowBarcodeScanner}
+      />
+
+      <SaleDetailsModal
+        visible={showSaleDetailsModal}
+        onClose={() => {
+          setShowSaleDetailsModal(false)
+          setSelectedSale(null)
+        }}
+        sale={selectedSale}
       />
 
       <BarcodeScanner

@@ -11,7 +11,8 @@ export const SaleModal = ({
     onRemoveFromCart,
     onUpdateCartQuantity,
     onCompleteSale,
-    onClearCart
+    onClearCart,
+    onShowBarcodeScanner
 }) => {
     const [newSale, setNewSale] = useState({ productId: "", quantity: "1" })
     const [metodoPago, setMetodoPago] = useState("efectivo")
@@ -44,8 +45,8 @@ export const SaleModal = ({
 
     return (
         <Modal visible={visible} animationType="slide" transparent={true}>
-            <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
-                <View style={{ backgroundColor: 'white', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '90%' }}>
+            <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+                <View style={{ backgroundColor: 'white', borderRadius: 24, padding: 24, width: '100%', maxWidth: 500, maxHeight: '90%' }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                         <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#111827' }}>Nueva Venta</Text>
                         <TouchableOpacity onPress={handleClose}>
@@ -101,7 +102,16 @@ export const SaleModal = ({
 
                         {/* Add Product Section */}
                         <View style={{ marginBottom: 16 }}>
-                            <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 }}>Agregar producto</Text>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151' }}>Agregar producto</Text>
+                                <TouchableOpacity
+                                    style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f3f4f6', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: '#e5e7eb' }}
+                                    onPress={() => onShowBarcodeScanner('sale')}
+                                >
+                                    <Ionicons name="barcode-outline" size={16} color="#374151" />
+                                    <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginLeft: 4 }}>Escanear</Text>
+                                </TouchableOpacity>
+                            </View>
                             <ScrollView style={{ maxHeight: 160, backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8 }}>
                                 {products.map((product) => (
                                     <TouchableOpacity

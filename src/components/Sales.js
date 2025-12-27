@@ -2,7 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity } from "react-native"
 import { Ionicons } from '@expo/vector-icons'
 import { calculateTotalSalesMonth } from '../utils/calculations'
 
-export const Sales = ({ sales, onShowSaleModal, onShowBarcodeScanner }) => {
+export const Sales = ({ sales, onShowSaleModal, onShowBarcodeScanner, onShowSaleDetails }) => {
     const totalSalesMonth = calculateTotalSalesMonth(sales)
 
     return (
@@ -47,29 +47,23 @@ export const Sales = ({ sales, onShowSaleModal, onShowBarcodeScanner }) => {
                     .slice()
                     .reverse()
                     .map((sale) => (
-                        <View key={sale.id} style={{ backgroundColor: 'white', padding: 16, borderRadius: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2, marginBottom: 12 }}>
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                        <TouchableOpacity
+                            key={sale.id}
+                            style={{ backgroundColor: 'white', padding: 16, borderRadius: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2, marginBottom: 12 }}
+                            onPress={() => onShowSaleDetails(sale)}
+                        >
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                 <View style={{ flex: 1 }}>
                                     <Text style={{ fontSize: 14, color: '#6b7280' }}>
                                         {new Date(sale.date).toLocaleDateString("es-ES")} - {new Date(sale.date).toLocaleTimeString("es-ES")}
                                     </Text>
-                                    <Text style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>
-                                        {sale.items.length} {sale.items.length === 1 ? 'producto' : 'productos'}
+                                    <Text style={{ fontSize: 12, color: '#3b82f6', marginTop: 2, fontWeight: '600' }}>
+                                        {sale.items.length} {sale.items.length === 1 ? 'producto' : 'productos'} • Ver detalle
                                     </Text>
                                 </View>
                                 <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#10b981' }}>${sale.total}</Text>
                             </View>
-                            <View style={{ borderTopWidth: 1, borderTopColor: '#f3f4f6', paddingTop: 8 }}>
-                                {sale.items.map((item, idx) => (
-                                    <View key={idx} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 }}>
-                                        <Text style={{ fontSize: 14, color: '#374151', flex: 1 }}>
-                                            {item.productName} x{item.quantity}
-                                        </Text>
-                                        <Text style={{ fontSize: 14, color: '#6b7280' }}>${item.subtotal}</Text>
-                                    </View>
-                                ))}
-                            </View>
-                        </View>
+                        </TouchableOpacity>
                     ))}
                 {sales.length === 0 && (
                     <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 48 }}>

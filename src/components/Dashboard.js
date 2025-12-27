@@ -2,7 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity } from "react-native"
 import { Ionicons, Feather } from '@expo/vector-icons'
 import { calculateTotalSalesToday, calculateTotalInventoryValue } from '../utils/calculations'
 
-export const Dashboard = ({ products, sales, onShowProductModal, onShowSaleModal }) => {
+export const Dashboard = ({ products, sales, onShowProductModal, onShowSaleModal, onShowSaleDetails }) => {
     const totalSalesToday = calculateTotalSalesToday(sales)
     const totalInventoryValue = calculateTotalInventoryValue(products)
 
@@ -53,19 +53,26 @@ export const Dashboard = ({ products, sales, onShowProductModal, onShowSaleModal
                     .slice(-5)
                     .reverse()
                     .map((sale) => (
-                        <View key={sale.id} style={{ paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}>
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                                <Text style={{ fontSize: 12, color: '#6b7280' }}>
-                                    {sale.items.length} {sale.items.length === 1 ? 'producto' : 'productos'}
-                                </Text>
-                                <Text style={{ fontWeight: 'bold', color: '#10b981' }}>${sale.total}</Text>
+                        <TouchableOpacity
+                            key={sale.id}
+                            style={{ paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}
+                            onPress={() => onShowSaleDetails(sale)}
+                        >
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <View>
+                                    <Text style={{ fontSize: 14, color: '#374151', fontWeight: '500' }}>
+                                        {sale.items.length} {sale.items.length === 1 ? 'producto' : 'productos'}
+                                    </Text>
+                                    <Text style={{ fontSize: 12, color: '#6b7280' }}>
+                                        {new Date(sale.date).toLocaleTimeString("es-ES", { hour: '2-digit', minute: '2-digit' })}
+                                    </Text>
+                                </View>
+                                <View style={{ alignItems: 'flex-end' }}>
+                                    <Text style={{ fontWeight: 'bold', color: '#10b981', fontSize: 16 }}>${sale.total}</Text>
+                                    <Text style={{ fontSize: 10, color: '#3b82f6' }}>Ver más</Text>
+                                </View>
                             </View>
-                            {sale.items.map((item, idx) => (
-                                <Text key={idx} style={{ fontSize: 14, color: '#374151' }}>
-                                    • {item.productName} x{item.quantity}
-                                </Text>
-                            ))}
-                        </View>
+                        </TouchableOpacity>
                     ))}
                 {sales.length === 0 && <Text style={{ color: '#9ca3af', textAlign: 'center', paddingVertical: 16 }}>No hay ventas registradas</Text>}
             </View>
