@@ -4,13 +4,23 @@ import { Ionicons } from '@expo/vector-icons'
 
 export const ProductModal = ({ visible, onClose, onAddProduct }) => {
     const [newProduct, setNewProduct] = useState({ nombre: "", precio: "", stock: "", descripcion: "" })
+    const [error, setError] = useState("")
 
     const handleSave = async () => {
-        const success = await onAddProduct(newProduct)
-        if (success) {
+        setError("") // Clear previous errors
+        const result = await onAddProduct(newProduct)
+        if (result.success) {
             setNewProduct({ nombre: "", precio: "", stock: "", descripcion: "" })
             onClose()
+        } else {
+            setError(result.message)
         }
+    }
+
+    const handleClose = () => {
+        setError("")
+        setNewProduct({ nombre: "", precio: "", stock: "", descripcion: "" })
+        onClose()
     }
 
     return (
@@ -19,10 +29,28 @@ export const ProductModal = ({ visible, onClose, onAddProduct }) => {
                 <View style={{ backgroundColor: 'white', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24 }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                         <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#111827' }}>Nuevo Producto</Text>
-                        <TouchableOpacity onPress={onClose}>
+                        <TouchableOpacity onPress={handleClose}>
                             <Ionicons name="close" size={24} color="#6b7280" />
                         </TouchableOpacity>
                     </View>
+
+                    {error && (
+                        <View style={{
+                            backgroundColor: '#fee2e2',
+                            borderLeftWidth: 4,
+                            borderLeftColor: '#ef4444',
+                            padding: 12,
+                            borderRadius: 8,
+                            marginBottom: 16,
+                            flexDirection: 'row',
+                            alignItems: 'center'
+                        }}>
+                            <Ionicons name="alert-circle" size={20} color="#ef4444" style={{ marginRight: 8 }} />
+                            <Text style={{ color: '#991b1b', flex: 1, fontSize: 14 }}>
+                                {error}
+                            </Text>
+                        </View>
+                    )}
 
                     <ScrollView>
                         <View style={{ marginBottom: 16 }}>

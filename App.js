@@ -72,12 +72,9 @@ const App = () => {
   const handleAddProductWrapper = async (product) => {
     const result = await handleAddProduct(product)
     if (result.success) {
-      setShowProductModal(false)
       showToast(result.message, "success")
-    } else {
-      showToast(result.message, "error")
     }
-    return result.success
+    return result
   }
 
   return (
@@ -162,7 +159,7 @@ const App = () => {
       {toast.visible && (
         <View style={{
           position: 'absolute',
-          bottom: 80,
+          top: 80,
           left: 16,
           right: 16,
           backgroundColor: toast.type === 'success' ? '#10b981' : '#ef4444',
@@ -171,7 +168,8 @@ const App = () => {
           shadowColor: '#000',
           shadowOpacity: 0.25,
           shadowRadius: 8,
-          elevation: 5
+          elevation: 1000,
+          zIndex: 9999
         }}>
           <Text style={{ color: 'white', fontWeight: '600', textAlign: 'center' }}>
             {toast.message}
