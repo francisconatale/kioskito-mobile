@@ -76,11 +76,6 @@ export const Dashboard = ({ products, sales, onShowProductModal, onShowSaleModal
                     ))}
                 {sales.length === 0 && <Text style={{ color: '#9ca3af', textAlign: 'center', paddingVertical: 16 }}>No hay ventas registradas</Text>}
             </View>
-
-            <View style={{ backgroundColor: '#3b82f6', padding: 24, borderRadius: 12, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 }}>
-                <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold', marginBottom: 8 }}>Valor del inventario</Text>
-                <Text style={{ color: 'white', fontSize: 30, fontWeight: 'bold' }}>${totalInventoryValue.toLocaleString()}</Text>
-            </View>
         </ScrollView>
     )
 }
