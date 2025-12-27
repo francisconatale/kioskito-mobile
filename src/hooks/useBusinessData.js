@@ -50,6 +50,7 @@ export const useBusinessData = () => {
                 precio: parseFloat(newProduct.precio),
                 stock: parseInt(newProduct.stock),
                 codigoBarras: newProduct.codigoBarras || null,
+                marca: newProduct.marca || null,
             }
 
             await productosAPI.create(producto)

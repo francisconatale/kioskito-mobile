@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { productosAPI } from '../services/api'
 
 export const ProductModal = ({ visible, onClose, onAddProduct, onShowBarcodeScanner }) => {
-    const [newProduct, setNewProduct] = useState({ nombre: "", precio: "", stock: "", descripcion: "", codigoBarras: "" })
+    const [newProduct, setNewProduct] = useState({ nombre: "", precio: "", stock: "", descripcion: "", codigoBarras: "", marca: "" })
     const [error, setError] = useState("")
     const [loadingBarcode, setLoadingBarcode] = useState(false)
     const [barcodeInfo, setBarcodeInfo] = useState("")
@@ -44,11 +44,8 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onShowBarcodeScan
                     setNewProduct(prev => ({
                         ...prev,
                         nombre: prev.nombre || foodData.name,
-                        descripcion: prev.descripcion || [
-                            foodData.brand,
-                            foodData.description,
-                            foodData.category
-                        ].filter(Boolean).join(' - '),
+                        marca: prev.marca || foodData.brand || "",
+                        descripcion: prev.descripcion || foodData.description || "",
                     }))
                     setBarcodeInfo(`✓ Datos cargados: ${foodData.brand || foodData.name}`)
                 } else {
@@ -71,7 +68,7 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onShowBarcodeScan
         setError("") // Clear previous errors
         const result = await onAddProduct(newProduct)
         if (result.success) {
-            setNewProduct({ nombre: "", precio: "", stock: "", descripcion: "", codigoBarras: "" })
+            setNewProduct({ nombre: "", precio: "", stock: "", descripcion: "", codigoBarras: "", marca: "" })
             onClose()
         } else {
             setError(result.message)
@@ -82,7 +79,7 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onShowBarcodeScan
         setError("")
         setBarcodeInfo("")
         setLoadingBarcode(false)
-        setNewProduct({ nombre: "", precio: "", stock: "", descripcion: "", codigoBarras: "" })
+        setNewProduct({ nombre: "", precio: "", stock: "", descripcion: "", codigoBarras: "", marca: "" })
         onClose()
     }
 
@@ -123,6 +120,16 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onShowBarcodeScan
                                 placeholder="Ej: Coca Cola"
                                 value={newProduct.nombre}
                                 onChangeText={(text) => setNewProduct({ ...newProduct, nombre: text })}
+                            />
+                        </View>
+
+                        <View style={{ marginBottom: 16 }}>
+                            <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 }}>Marca</Text>
+                            <TextInput
+                                style={{ backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, color: '#111827' }}
+                                placeholder="Ej: Arcor"
+                                value={newProduct.marca}
+                                onChangeText={(text) => setNewProduct({ ...newProduct, marca: text })}
                             />
                         </View>
 
