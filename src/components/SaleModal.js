@@ -105,9 +105,9 @@ export const SaleModal = ({
                                         style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6', backgroundColor: newSale.productId === product.id ? '#eff6ff' : 'transparent' }}
                                         onPress={() => setNewSale({ ...newSale, productId: product.id })}
                                     >
-                                        <Text style={{ fontWeight: '600', color: '#111827' }}>{product.name}</Text>
+                                        <Text style={{ fontWeight: '600', color: '#111827' }}>{product.nombre}</Text>
                                         <Text style={{ fontSize: 14, color: '#6b7280' }}>
-                                            ${product.price} - Stock: {product.stock}
+                                            ${product.precio} - Stock: {product.stock}
                                         </Text>
                                     </TouchableOpacity>
                                 ))}

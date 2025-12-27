@@ -18,7 +18,7 @@ export const calculateTotalSalesMonth = (sales) => {
  * Calculate total inventory value
  */
 export const calculateTotalInventoryValue = (products) => {
-    return products.reduce((sum, p) => sum + p.price * p.stock, 0)
+    return products.reduce((sum, p) => sum + p.precio * p.stock, 0)
 }
 
 /**
