@@ -30,8 +30,8 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onUpdateProduct, 
         const lookupBarcode = async () => {
             const barcode = newProduct.codigoBarras?.trim()
 
-            // Only lookup if barcode has at least 8 digits
-            if (!barcode || barcode.length < 8) {
+            // Only lookup if it's a new product (no id) and barcode has at least 8 digits
+            if (initialProduct?.id || !barcode || barcode.length < 8) {
                 setBarcodeInfo("")
                 return
             }
@@ -129,7 +129,7 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onUpdateProduct, 
                 }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                         <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#111827' }}>
-                            {initialProduct ? 'Editar Producto' : 'Nuevo Producto'}
+                            {initialProduct?.id ? 'Editar Producto' : 'Nuevo Producto'}
                         </Text>
                         <TouchableOpacity onPress={handleClose}>
                             <Ionicons name="close" size={24} color="#6b7280" />
@@ -154,12 +154,47 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onUpdateProduct, 
                         </View>
                     )}
 
+                    {loadingBarcode && (
+                        <View style={{
+                            backgroundColor: '#eff6ff',
+                            borderLeftWidth: 4,
+                            borderLeftColor: '#3b82f6',
+                            padding: 12,
+                            borderRadius: 8,
+                            marginBottom: 16,
+                            flexDirection: 'row',
+                            alignItems: 'center'
+                        }}>
+                            <ActivityIndicator size="small" color="#3b82f6" style={{ marginRight: 8 }} />
+                            <Text style={{ color: '#1e40af', flex: 1, fontSize: 14 }}>
+                                Buscando producto...
+                            </Text>
+                        </View>
+                    )}
+
+                    {!loadingBarcode && barcodeInfo && barcodeInfo.includes("no encontrado") && (
+                        <View style={{
+                            backgroundColor: '#fffbeb',
+                            borderLeftWidth: 4,
+                            borderLeftColor: '#f59e0b',
+                            padding: 12,
+                            borderRadius: 8,
+                            marginBottom: 16,
+                            flexDirection: 'row',
+                            alignItems: 'center'
+                        }}>
+                            <Ionicons name="alert-outline" size={20} color="#d97706" style={{ marginRight: 8 }} />
+                            <Text style={{ color: '#92400e', flex: 1, fontSize: 14 }}>
+                                Producto no encontrado, debe ingresarlo a mano
+                            </Text>
+                        </View>
+                    )}
+
                     <ScrollView showsVerticalScrollIndicator={false}>
                         <View style={{ marginBottom: 16 }}>
                             <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 }}>Nombre del producto *</Text>
                             <TextInput
                                 style={{ backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, color: '#111827' }}
-                                placeholder="Ej: Coca Cola"
                                 value={newProduct.nombre}
                                 onChangeText={(text) => setNewProduct({ ...newProduct, nombre: text })}
                             />
@@ -169,7 +204,6 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onUpdateProduct, 
                             <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 }}>Marca</Text>
                             <TextInput
                                 style={{ backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, color: '#111827' }}
-                                placeholder="Ej: Arcor"
                                 value={newProduct.marca}
                                 onChangeText={(text) => setNewProduct({ ...newProduct, marca: text })}
                             />
@@ -179,7 +213,6 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onUpdateProduct, 
                             <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 }}>Descripción</Text>
                             <TextInput
                                 style={{ backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, color: '#111827' }}
-                                placeholder="Ej: Bebida 500ml"
                                 value={newProduct.descripcion}
                                 onChangeText={(text) => setNewProduct({ ...newProduct, descripcion: text })}
                                 multiline
@@ -192,34 +225,30 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onUpdateProduct, 
                             <View style={{ flexDirection: 'row', gap: 8 }}>
                                 <View style={{ flex: 1 }}>
                                     <TextInput
-                                        style={{ backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, color: '#111827' }}
+                                        style={{
+                                            backgroundColor: initialProduct?.id ? '#f3f4f6' : '#f9fafb',
+                                            borderWidth: 1,
+                                            borderColor: '#e5e7eb',
+                                            borderRadius: 8,
+                                            padding: 12,
+                                            color: initialProduct?.id ? '#6b7280' : '#111827'
+                                        }}
                                         placeholder="Escanea o ingresa manualmente"
                                         value={newProduct.codigoBarras}
                                         onChangeText={(text) => setNewProduct({ ...newProduct, codigoBarras: text })}
                                         keyboardType="numeric"
+                                        editable={!initialProduct?.id}
                                     />
-                                    {loadingBarcode && (
-                                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
-                                            <ActivityIndicator size="small" color="#3b82f6" />
-                                            <Text style={{ fontSize: 12, color: '#6b7280', marginLeft: 6 }}>Buscando...</Text>
-                                        </View>
-                                    )}
-                                    {!loadingBarcode && barcodeInfo && (
-                                        <Text style={{
-                                            fontSize: 12,
-                                            color: barcodeInfo.startsWith('✓') ? '#10b981' : '#f59e0b',
-                                            marginTop: 6
-                                        }}>
-                                            {barcodeInfo}
-                                        </Text>
-                                    )}
+
                                 </View>
-                                <TouchableOpacity
-                                    style={{ backgroundColor: '#3b82f6', padding: 12, borderRadius: 8, justifyContent: 'center', alignItems: 'center', minWidth: 50 }}
-                                    onPress={() => onShowBarcodeScanner('product', (code) => setNewProduct({ ...newProduct, codigoBarras: code }))}
-                                >
-                                    <Ionicons name="barcode-outline" size={24} color="#fff" />
-                                </TouchableOpacity>
+                                {!initialProduct?.id && (
+                                    <TouchableOpacity
+                                        style={{ backgroundColor: '#3b82f6', padding: 12, borderRadius: 8, justifyContent: 'center', alignItems: 'center', minWidth: 50 }}
+                                        onPress={() => onShowBarcodeScanner('product', (code) => setNewProduct({ ...newProduct, codigoBarras: code }))}
+                                    >
+                                        <Ionicons name="barcode-outline" size={24} color="#fff" />
+                                    </TouchableOpacity>
+                                )}
                             </View>
                         </View>
 
@@ -227,7 +256,6 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onUpdateProduct, 
                             <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 }}>Precio *</Text>
                             <TextInput
                                 style={{ backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, color: '#111827' }}
-                                placeholder="0.00"
                                 keyboardType="numeric"
                                 value={newProduct.precio}
                                 onChangeText={(text) => setNewProduct({ ...newProduct, precio: text })}
@@ -238,7 +266,6 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onUpdateProduct, 
                             <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 }}>Stock inicial *</Text>
                             <TextInput
                                 style={{ backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, color: '#111827' }}
-                                placeholder="0"
                                 keyboardType="numeric"
                                 value={newProduct.stock}
                                 onChangeText={(text) => setNewProduct({ ...newProduct, stock: text })}

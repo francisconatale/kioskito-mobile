@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 
 export const BarcodeScanner = ({ visible, onClose, mode, onScan }) => {
-    const [barcodeInput, setBarcodeInput] = useState("")
     const [scanned, setScanned] = useState(false)
     const [permission, requestPermission] = useCameraPermissions()
 
@@ -17,7 +16,6 @@ export const BarcodeScanner = ({ visible, onClose, mode, onScan }) => {
     useEffect(() => {
         if (visible) {
             setScanned(false)
-            setBarcodeInput("")
         }
     }, [visible])
 
@@ -28,15 +26,7 @@ export const BarcodeScanner = ({ visible, onClose, mode, onScan }) => {
         onClose()
     }
 
-    const handleManualConfirm = () => {
-        if (barcodeInput.trim()) {
-            onScan(barcodeInput.trim())
-            setBarcodeInput("")
-            onClose()
-        } else {
-            Alert.alert("Error", "Ingresa un código de barras")
-        }
-    }
+
 
     if (!permission) {
         return <View />
@@ -92,19 +82,7 @@ export const BarcodeScanner = ({ visible, onClose, mode, onScan }) => {
                     </View>
 
                     <View style={styles.footer}>
-                        <Text style={styles.footerText}>Encuentra el código de barras</Text>
-                        <View style={styles.manualInputWrapper}>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Ingresar manualmente"
-                                keyboardType="numeric"
-                                value={barcodeInput}
-                                onChangeText={setBarcodeInput}
-                            />
-                            <TouchableOpacity style={styles.confirmBtn} onPress={handleManualConfirm}>
-                                <Ionicons name="checkmark" size={24} color="white" />
-                            </TouchableOpacity>
-                        </View>
+                        <Text style={styles.footerText}>Encuentra el código de barras y céntralo en el recuadro</Text>
                     </View>
                 </View>
             </View>
