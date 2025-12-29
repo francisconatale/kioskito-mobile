@@ -26,6 +26,12 @@ export const SaleModal = ({
     const [metodoPago, setMetodoPago] = useState("efectivo")
     const [clienteId, setClienteId] = useState(null)
     const [step, setStep] = useState(1) // 1: Carrito/Agregar, 2: Pagar
+    const [searchTerm, setSearchTerm] = useState("")
+
+    const filteredProducts = products.filter(product =>
+        product.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+
 
     const handleAddToCart = () => {
         const success = onAddToCart(newSale.productId, newSale.quantity)
@@ -92,8 +98,27 @@ export const SaleModal = ({
                                             <Text style={{ fontSize: 12, fontWeight: '500', color: '#3b82f6', marginLeft: 4 }}>Escanear</Text>
                                         </TouchableOpacity>
                                     </View>
+
+                                    <View style={{ marginBottom: 8 }}>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f9fafb', borderRadius: 8, paddingHorizontal: 10, borderWidth: 1, borderColor: '#e5e7eb' }}>
+                                            <Ionicons name="search" size={18} color="#9ca3af" />
+                                            <TextInput
+                                                style={{ flex: 1, paddingVertical: 8, paddingHorizontal: 8, fontSize: 14, color: '#111827' }}
+                                                placeholder="Buscar producto..."
+                                                placeholderTextColor="#9ca3af"
+                                                value={searchTerm}
+                                                onChangeText={setSearchTerm}
+                                            />
+                                            {searchTerm.length > 0 && (
+                                                <TouchableOpacity onPress={() => setSearchTerm("")}>
+                                                    <Ionicons name="close-circle" size={18} color="#9ca3af" />
+                                                </TouchableOpacity>
+                                            )}
+                                        </View>
+                                    </View>
+
                                     <ScrollView style={{ maxHeight: 240, backgroundColor: '#fff', borderRadius: 8, borderWidth: 1, borderColor: '#f3f4f6' }}>
-                                        {products.map((product) => (
+                                        {filteredProducts.map((product) => (
                                             <TouchableOpacity
                                                 key={product.id}
                                                 style={{

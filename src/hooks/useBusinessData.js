@@ -254,7 +254,7 @@ export const useBusinessData = () => {
             const total = subtotal + recargo
 
             const ventaRequest = {
-                fecha: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+                fecha: new Date().toISOString(), // Full ISO string with time
                 montoTotal: subtotal, // Store only the base amount without surcharge
                 metodoPago: metodoPago,
                 clienteId: clienteId,

@@ -1,7 +1,14 @@
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native"
+import { useState } from "react"
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput } from "react-native"
 import { Ionicons, Feather } from '@expo/vector-icons'
 
 export const Products = ({ products, loading, onShowProductModal, onDeleteProduct, onEditProduct, onShowBarcodeScanner }) => {
+    const [searchTerm, setSearchTerm] = useState("")
+
+    const filteredProducts = products.filter(product =>
+        product.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+
     return (
         <View style={{ flex: 1 }}>
             <View style={{ backgroundColor: 'white', padding: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 }}>
@@ -26,6 +33,24 @@ export const Products = ({ products, loading, onShowProductModal, onDeleteProduc
                 </View>
             </View>
 
+            <View style={{ backgroundColor: 'white', paddingHorizontal: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f9fafb', borderRadius: 8, paddingHorizontal: 12, borderWidth: 1, borderColor: '#e5e7eb' }}>
+                    <Ionicons name="search" size={20} color="#9ca3af" />
+                    <TextInput
+                        style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 8, fontSize: 16, color: '#111827' }}
+                        placeholder="Buscar en mis productos..."
+                        placeholderTextColor="#9ca3af"
+                        value={searchTerm}
+                        onChangeText={setSearchTerm}
+                    />
+                    {searchTerm.length > 0 && (
+                        <TouchableOpacity onPress={() => setSearchTerm("")}>
+                            <Ionicons name="close-circle" size={20} color="#9ca3af" />
+                        </TouchableOpacity>
+                    )}
+                </View>
+            </View>
+
             {loading ? (
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <ActivityIndicator size="large" color="#3b82f6" />
@@ -33,7 +58,7 @@ export const Products = ({ products, loading, onShowProductModal, onDeleteProduc
                 </View>
             ) : (
                 <ScrollView style={{ flex: 1, padding: 16 }}>
-                    {products.map((product) => (
+                    {filteredProducts.map((product) => (
                         <View key={product.id} style={{ backgroundColor: 'white', borderRadius: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2, marginBottom: 12, overflow: 'hidden' }}>
                             <TouchableOpacity
                                 style={{ flexDirection: 'row', padding: 16 }}
@@ -77,10 +102,12 @@ export const Products = ({ products, loading, onShowProductModal, onDeleteProduc
                             </TouchableOpacity>
                         </View>
                     ))}
-                    {products.length === 0 && !loading && (
+                    {filteredProducts.length === 0 && !loading && (
                         <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 48 }}>
                             <Feather name="package" size={48} color="#d1d5db" />
-                            <Text style={{ color: '#9ca3af', marginTop: 16 }}>No hay productos registrados</Text>
+                            <Text style={{ color: '#9ca3af', marginTop: 16 }}>
+                                {searchTerm ? "No se encontraron productos" : "No hay productos registrados"}
+                            </Text>
                         </View>
                     )}
                 </ScrollView>
