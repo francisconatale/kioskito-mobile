@@ -242,7 +242,7 @@ export const useBusinessData = () => {
         }
     }
 
-    const handleCompleteSale = async (metodoPago = "efectivo", clienteId = null) => {
+    const handleCompleteSale = async (metodoPago = "efectivo", clienteId = null, recargo = 0) => {
         if (saleCart.length === 0) {
             Alert.alert("Error", "Agrega productos a la venta")
             return { success: false, message: "El carrito está vacío" }
@@ -250,13 +250,15 @@ export const useBusinessData = () => {
 
         try {
             setLoading(true)
-            const total = saleCart.reduce((sum, item) => sum + item.subtotal, 0)
+            const subtotal = saleCart.reduce((sum, item) => sum + item.subtotal, 0)
+            const total = subtotal + recargo
 
             const ventaRequest = {
                 fecha: new Date().toISOString().split('T')[0], // YYYY-MM-DD
-                montoTotal: total,
+                montoTotal: subtotal, // Store only the base amount without surcharge
                 metodoPago: metodoPago,
                 clienteId: clienteId,
+                recargo: recargo, // Optional: useful if backend supports it
                 detalles: saleCart.map(item => ({
                     productoId: item.productId,
                     cantidad: item.quantity,

@@ -14,6 +14,14 @@ export const SaleModal = ({
     onClearCart,
     onShowBarcodeScanner
 }) => {
+    const PAYMENT_OPTIONS = {
+        efectivo: { label: 'Efectivo', surcharge: 0, icon: 'cash-outline' },
+        transferencia: { label: 'Transferencia', surcharge: 0, icon: 'phone-portrait-outline' },
+        debito: { label: 'Débito (~3%)', surcharge: 0.03, icon: 'card-outline' },
+        prepaga: { label: 'Prepaga (4.5%)', surcharge: 0.045, icon: 'wallet-outline' },
+        credito_inmediato: { label: 'Crédito Inmediato (8%)', surcharge: 0.08, icon: 'flash-outline' },
+    }
+
     const [newSale, setNewSale] = useState({ productId: "", quantity: "1" })
     const [metodoPago, setMetodoPago] = useState("efectivo")
     const [clienteId, setClienteId] = useState(null)
@@ -27,7 +35,11 @@ export const SaleModal = ({
     }
 
     const handleCompleteSale = async () => {
-        const result = await onCompleteSale(metodoPago, clienteId)
+        const surchargePct = PAYMENT_OPTIONS[metodoPago]?.surcharge || 0
+        const currentTotal = saleCart.reduce((sum, item) => sum + item.subtotal, 0)
+        const recargoAmount = currentTotal * surchargePct
+
+        const result = await onCompleteSale(metodoPago, clienteId, recargoAmount)
         if (result && result.success) {
             setNewSale({ productId: "", quantity: "1" })
             setMetodoPago("efectivo")
@@ -209,62 +221,82 @@ export const SaleModal = ({
                         ) : (
                             <>
                                 {/* Step 2: Payment & Confirm */}
-                                <View style={{ alignItems: 'center', marginVertical: 24 }}>
-                                    <Text style={{ fontSize: 14, color: '#6b7280', marginBottom: 4 }}>Total a pagar</Text>
-                                    <Text style={{ fontSize: 36, fontWeight: 'bold', color: '#111827' }}>${cartTotal}</Text>
-                                    <Text style={{ fontSize: 14, color: '#6b7280', marginTop: 4 }}>{saleCart.reduce((acc, item) => acc + item.quantity, 0)} productos</Text>
-                                </View>
+                                {(() => {
+                                    const surchargePct = PAYMENT_OPTIONS[metodoPago]?.surcharge || 0
+                                    const recargoAmount = cartTotal * surchargePct
+                                    const finalTotal = cartTotal + recargoAmount
 
-                                <View style={{ marginBottom: 32 }}>
-                                    <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 }}>Método de Pago</Text>
-                                    <View style={{ gap: 8 }}>
-                                        {['efectivo', 'tarjeta', 'transferencia'].map((metodo) => (
-                                            <TouchableOpacity
-                                                key={metodo}
-                                                style={{
-                                                    flexDirection: 'row',
-                                                    alignItems: 'center',
-                                                    padding: 16,
-                                                    borderRadius: 12,
-                                                    borderWidth: 1,
-                                                    borderColor: metodoPago === metodo ? '#3b82f6' : '#e5e7eb',
-                                                    backgroundColor: metodoPago === metodo ? '#eff6ff' : 'white',
-                                                }}
-                                                onPress={() => setMetodoPago(metodo)}
-                                            >
-                                                <View style={{
-                                                    width: 20,
-                                                    height: 20,
-                                                    borderRadius: 10,
-                                                    borderWidth: 2,
-                                                    borderColor: metodoPago === metodo ? '#3b82f6' : '#9ca3af',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    marginRight: 12
-                                                }}>
-                                                    {metodoPago === metodo && (
-                                                        <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#3b82f6' }} />
-                                                    )}
+                                    return (
+                                        <>
+                                            <View style={{ width: '100%', backgroundColor: '#f9fafb', padding: 16, borderRadius: 12, marginBottom: 24, borderWidth: 1, borderColor: '#f3f4f6' }}>
+                                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                                                    <Text style={{ color: '#4b5563', fontSize: 16 }}>Subtotal</Text>
+                                                    <Text style={{ fontWeight: '600', color: '#111827', fontSize: 16 }}>${Math.round(cartTotal)}</Text>
                                                 </View>
-                                                <Text style={{
-                                                    fontSize: 16,
-                                                    fontWeight: metodoPago === metodo ? '600' : '400',
-                                                    color: metodoPago === metodo ? '#111827' : '#374151',
-                                                    textTransform: 'capitalize'
-                                                }}>
-                                                    {metodo}
+
+                                                {recargoAmount > 0 && (
+                                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                                                        <Text style={{ color: '#c2410c', fontSize: 15 }}>Recargo ({(surchargePct * 100).toLocaleString()}%)</Text>
+                                                        <Text style={{ fontWeight: '600', color: '#c2410c', fontSize: 15 }}>+${Math.round(recargoAmount)}</Text>
+                                                    </View>
+                                                )}
+
+                                                <View style={{ height: 1, backgroundColor: '#e5e7eb', marginVertical: 8 }} />
+
+                                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#111827' }}>Total Final</Text>
+                                                    <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#10b981' }}>${Math.round(finalTotal)}</Text>
+                                                </View>
+
+                                                <Text style={{ fontSize: 13, color: '#9ca3af', marginTop: 8, textAlign: 'right' }}>
+                                                    {saleCart.reduce((acc, item) => acc + item.quantity, 0)} productos
+                                                </Text>
+                                            </View>
+
+                                            <View style={{ marginBottom: 32 }}>
+                                                <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 }}>Método de Pago</Text>
+                                                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                                                    {Object.entries(PAYMENT_OPTIONS).map(([key, option]) => (
+                                                        <TouchableOpacity
+                                                            key={key}
+                                                            style={{
+                                                                width: '48%', // Approx 2 columns
+                                                                flexDirection: 'row',
+                                                                alignItems: 'center',
+                                                                padding: 12,
+                                                                borderRadius: 12,
+                                                                borderWidth: 1,
+                                                                borderColor: metodoPago === key ? '#3b82f6' : '#e5e7eb',
+                                                                backgroundColor: metodoPago === key ? '#eff6ff' : 'white',
+                                                            }}
+                                                            onPress={() => setMetodoPago(key)}
+                                                        >
+                                                            <Ionicons name={option.icon} size={20} color={metodoPago === key ? '#3b82f6' : '#6b7280'} style={{ marginRight: 8 }} />
+                                                            <View style={{ flex: 1 }}>
+                                                                <Text style={{
+                                                                    fontSize: 13,
+                                                                    fontWeight: metodoPago === key ? '700' : '400',
+                                                                    color: metodoPago === key ? '#111827' : '#374151',
+                                                                }}>
+                                                                    {option.label}
+                                                                </Text>
+                                                            </View>
+                                                        </TouchableOpacity>
+                                                    ))}
+                                                </View>
+                                            </View>
+
+                                            <TouchableOpacity
+                                                style={{ backgroundColor: '#10b981', padding: 16, borderRadius: 12, alignItems: 'center' }}
+                                                onPress={handleCompleteSale}
+                                            >
+                                                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 18 }}>
+                                                    Cobrar ${Math.round(finalTotal)}
                                                 </Text>
                                             </TouchableOpacity>
-                                        ))}
-                                    </View>
-                                </View>
-
-                                <TouchableOpacity
-                                    style={{ backgroundColor: '#10b981', padding: 16, borderRadius: 12, alignItems: 'center' }}
-                                    onPress={handleCompleteSale}
-                                >
-                                    <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>Confimar Venta</Text>
-                                </TouchableOpacity>
+                                        </>
+                                    )
+                                })()}
                             </>
                         )}
                     </ScrollView>
