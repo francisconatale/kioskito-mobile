@@ -121,20 +121,21 @@ export const useBusinessData = () => {
 
         const qty = parseInt(quantity)
         if (qty > product.stock) {
-            Alert.alert("Error", "Stock insuficiente")
+            Alert.alert("Error", `Stock insuficiente. Solo quedan ${product.stock}`)
             return false
         }
 
+        // Update Products Stock (Memory)
+        setProducts(products.map(p =>
+            p.id === productId ? { ...p, stock: p.stock - qty } : p
+        ))
+
         const existingItem = saleCart.find(item => item.productId === product.id)
         if (existingItem) {
-            const newQuantity = existingItem.quantity + qty
-            if (newQuantity > product.stock) {
-                Alert.alert("Error", "Stock insuficiente")
-                return false
-            }
+            // Logic handled by memory stock check now, but just to be safe in async state, trust the memory stock check above
             setSaleCart(saleCart.map(item =>
                 item.productId === product.id
-                    ? { ...item, quantity: newQuantity, subtotal: product.precio * newQuantity }
+                    ? { ...item, quantity: existingItem.quantity + qty, subtotal: product.precio * (existingItem.quantity + qty) }
                     : item
             ))
         } else {
@@ -151,7 +152,13 @@ export const useBusinessData = () => {
     }
 
     const handleRemoveFromCart = (productId) => {
-        setSaleCart(saleCart.filter(item => item.productId !== productId))
+        const itemToRemove = saleCart.find(item => item.productId === productId)
+        if (itemToRemove) {
+            setProducts(products.map(p =>
+                p.id === productId ? { ...p, stock: p.stock + itemToRemove.quantity } : p
+            ))
+            setSaleCart(saleCart.filter(item => item.productId !== productId))
+        }
     }
 
     const handleUpdateCartQuantity = (productId, newQuantity) => {
@@ -160,11 +167,22 @@ export const useBusinessData = () => {
             return
         }
 
+        const existingItem = saleCart.find(item => item.productId === productId)
+        if (!existingItem) return
+
         const product = products.find(p => p.id === productId)
-        if (newQuantity > product.stock) {
-            Alert.alert("Error", "Stock insuficiente")
+        // difference > 0 means adding more, so check stock. product.stock here is "remaining stock"
+        const qtyDifference = newQuantity - existingItem.quantity
+
+        if (qtyDifference > 0 && qtyDifference > product.stock) {
+            Alert.alert("Error", `Stock insuficiente. Solo puedes agregar ${product.stock} más.`)
             return
         }
+
+        // Update Products Stock
+        setProducts(products.map(p =>
+            p.id === productId ? { ...p, stock: p.stock - qtyDifference } : p
+        ))
 
         setSaleCart(saleCart.map(item =>
             item.productId === productId
@@ -174,12 +192,32 @@ export const useBusinessData = () => {
     }
 
     const clearCart = () => {
+        // Restore stock for all items
+        const pendingStock = {} // map id -> qty
+        saleCart.forEach(item => {
+            pendingStock[item.productId] = item.quantity
+        })
+
+        setProducts(products.map(p =>
+            pendingStock[p.id] ? { ...p, stock: p.stock + pendingStock[p.id] } : p
+        ))
+
         setSaleCart([])
     }
 
     const addProductToCartByBarcode = (barcode) => {
         const product = products.find((p) => p.codigoBarras === barcode)
         if (product) {
+            if (product.stock < 1) {
+                Alert.alert("Error", "Stock insuficiente")
+                return false
+            }
+
+            // Update Products Stock
+            setProducts(products.map(p =>
+                p.id === product.id ? { ...p, stock: p.stock - 1 } : p
+            ))
+
             const existingItem = saleCart.find(item => item.productId === product.id)
             if (existingItem) {
                 setSaleCart(saleCart.map(item =>
