@@ -12,13 +12,6 @@ export const Sales = ({ sales, onShowSaleModal, onShowBarcodeScanner, onShowSale
                     <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#111827' }}>Registrar Venta</Text>
                     <View style={{ flexDirection: 'row', gap: 8 }}>
                         <TouchableOpacity
-                            style={{ backgroundColor: '#9333ea', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, flexDirection: 'row', alignItems: 'center' }}
-                            onPress={onShowBarcodeScanner}
-                        >
-                            <Ionicons name="scan-outline" size={20} color="#fff" />
-                            <Text style={{ color: 'white', fontWeight: '600', marginLeft: 4 }}>Escanear</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
                             style={{ backgroundColor: '#10b981', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, flexDirection: 'row', alignItems: 'center' }}
                             onPress={onShowSaleModal}
                         >

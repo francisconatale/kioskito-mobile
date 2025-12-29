@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://192.168.100.4:8080/api'
+const API_BASE_URL = 'http://192.168.100.232:8080/api'
 
 // Generic API request handler
 const apiRequest = async (endpoint, options = {}) => {
