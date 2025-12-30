@@ -1,11 +1,15 @@
 import { useState } from "react"
 import { View, Text, SafeAreaView } from "react-native"
 import { Dashboard } from "./src/components/Dashboard"
-import { Products } from "./src/components/Products"
+import { Products } from "./src/components/Products" // Keep for safety if needed or remove but I'll replace usage
+import { Inventory } from "./src/components/Inventory"
 import { Sales } from "./src/components/Sales"
+import { Debtors } from "./src/components/Debtors"
 import { Analytics } from "./src/components/Analytics"
 import { ProductModal } from "./src/components/ProductModal"
 import { SaleModal } from "./src/components/SaleModal"
+import { ClientModal } from "./src/components/ClientModal"
+import { RestockModal } from "./src/components/RestockModal"
 import { SaleDetailsModal } from "./src/components/SaleDetailsModal"
 import { BarcodeScanner } from "./src/components/BarcodeScanner"
 import { BottomNavigation } from "./src/components/BottomNavigation"
@@ -16,12 +20,15 @@ const App = () => {
   const [activeTab, setActiveTab] = useState("dashboard")
   const [showProductModal, setShowProductModal] = useState(false)
   const [showSaleModal, setShowSaleModal] = useState(false)
+  const [showRestockModal, setShowRestockModal] = useState(false)
   const [showSaleDetailsModal, setShowSaleDetailsModal] = useState(false)
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false)
+  const [showClientModal, setShowClientModal] = useState(false)
   const [scanMode, setScanMode] = useState("product")
   const [barcodeCallback, setBarcodeCallback] = useState(null)
   const [confirmDialog, setConfirmDialog] = useState({ visible: false, productId: null })
   const [selectedProduct, setSelectedProduct] = useState(null)
+  const [selectedClient, setSelectedClient] = useState(null)
   const [selectedSale, setSelectedSale] = useState(null)
   const [toast, setToast] = useState({ visible: false, message: "", type: "success" })
 
@@ -29,6 +36,7 @@ const App = () => {
     products,
     sales,
     saleCart,
+    restockCart,
     loading,
     fetchData,
     fetchProducts,
@@ -42,11 +50,27 @@ const App = () => {
     clearCart,
     addProductToCartByBarcode,
     handleCompleteSale,
+    handleAddToRestockCart,
+    handleRemoveFromRestockCart,
+    handleCompleteRestock,
+    clearRestockCart,
+    clients,
+    fetchClients,
+    searchClients,
+    handleAddClient,
+    handleUpdateClient,
+    handleRegistrarPago,
+    movements
   } = useBusinessData()
 
   const handleShowProductModal = (product = null) => {
     setSelectedProduct(product)
     setShowProductModal(true)
+  }
+
+  const handleShowClientModal = (client = null) => {
+    setSelectedClient(client)
+    setShowClientModal(true)
   }
 
   const handleShowSaleDetails = (sale) => {
@@ -117,19 +141,12 @@ const App = () => {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f9fafb' }}>
-      <View style={{ backgroundColor: 'white', padding: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <View>
-            <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#111827' }}>Kioskito</Text>
-            <Text style={{ color: '#6b7280' }}>Sistema de gestión</Text>
-          </View>
-          <View style={{ width: 48, height: 48, backgroundColor: '#3b82f6', borderRadius: 24, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 18 }}>K</Text>
-          </View>
-        </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
+      <View style={{ paddingHorizontal: 16, paddingVertical: 14, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#F3F4F6', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ fontSize: 18, fontWeight: '900', color: '#111827', letterSpacing: 2, textTransform: 'uppercase', fontFamily: 'System' }}>
+          Kios<Text style={{ color: '#2563EB' }}>kito</Text>
+        </Text>
       </View>
-
       {activeTab === "dashboard" && (
         <Dashboard
           products={products}
@@ -140,14 +157,17 @@ const App = () => {
           onRefresh={fetchData}
         />
       )}
-      {activeTab === "products" && (
-        <Products
+      {activeTab === "inventory" && (
+        <Inventory
           products={products}
+          sales={sales}
+          movements={movements}
           loading={loading}
           onShowProductModal={() => handleShowProductModal()}
           onEditProduct={handleShowProductModal}
           onDeleteProduct={handleDeleteProductRequest}
           onShowBarcodeScanner={() => handleShowBarcodeScanner("product")}
+          onShowRestockModal={() => setShowRestockModal(true)}
           onRefresh={fetchProducts}
         />
       )}
@@ -155,15 +175,28 @@ const App = () => {
         <Sales
           sales={sales}
           onShowSaleModal={() => setShowSaleModal(true)}
-          onShowBarcodeScanner={() => handleShowBarcodeScanner("sale")}
+          onShowBarcodeScanner={(mode) => handleShowBarcodeScanner(mode)}
           onShowSaleDetails={handleShowSaleDetails}
           onRefresh={fetchSales}
+        />
+      )}
+      {activeTab === "debtors" && (
+        <Debtors
+          clients={clients}
+          sales={sales}
+          onRegistrarPago={handleRegistrarPago}
+          onShowSaleDetails={handleShowSaleDetails}
+          onShowClientModal={handleShowClientModal}
+          onRefresh={fetchClients}
+          onShowToast={showToast}
+          loading={loading}
         />
       )}
       {activeTab === "analytics" && (
         <Analytics
           products={products}
           sales={sales}
+          clients={clients}
         />
       )}
 
@@ -181,6 +214,14 @@ const App = () => {
         initialProduct={selectedProduct}
       />
 
+      <ClientModal
+        visible={showClientModal}
+        onClose={() => setShowClientModal(false)}
+        onAddClient={handleAddClient}
+        onUpdateClient={handleUpdateClient}
+        initialClient={selectedClient}
+      />
+
       <SaleModal
         visible={showSaleModal}
         onClose={() => setShowSaleModal(false)}
@@ -191,6 +232,20 @@ const App = () => {
         onUpdateCartQuantity={handleUpdateCartQuantity}
         onCompleteSale={handleCompleteSale}
         onClearCart={clearCart}
+        onShowBarcodeScanner={handleShowBarcodeScanner}
+        clients={clients}
+      />
+
+      <RestockModal
+        visible={showRestockModal}
+        onClose={() => setShowRestockModal(false)}
+        products={products}
+        restockCart={restockCart}
+        onAddToCart={handleAddToRestockCart}
+        onRemoveFromCart={handleRemoveFromRestockCart}
+        onUpdateCartQuantity={() => { }} // Not implemented for restock yet
+        onCompleteRestock={handleCompleteRestock}
+        onClearCart={clearRestockCart}
         onShowBarcodeScanner={handleShowBarcodeScanner}
       />
 
@@ -222,19 +277,19 @@ const App = () => {
       {toast.visible && (
         <View style={{
           position: 'absolute',
-          top: 80,
+          top: 60,
           left: 16,
           right: 16,
-          backgroundColor: toast.type === 'success' ? '#10b981' : '#ef4444',
-          padding: 16,
-          borderRadius: 8,
+          backgroundColor: toast.type === 'success' ? '#16A34A' : '#DC2626',
+          padding: 14,
+          borderRadius: 12,
           shadowColor: '#000',
-          shadowOpacity: 0.25,
-          shadowRadius: 8,
-          elevation: 1000,
+          shadowOpacity: 0.1,
+          shadowRadius: 10,
+          elevation: 5,
           zIndex: 9999
         }}>
-          <Text style={{ color: 'white', fontWeight: '600', textAlign: 'center' }}>
+          <Text style={{ color: 'white', fontWeight: '600', textAlign: 'center', fontSize: 14, fontFamily: 'System' }}>
             {toast.message}
           </Text>
         </View>
