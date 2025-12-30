@@ -1,12 +1,12 @@
-import { Modal, View, Text, TouchableOpacity } from "react-native"
+import { Modal, View, Text, TouchableOpacity, ActivityIndicator } from "react-native"
 
-export const ConfirmDialog = ({ visible, title, message, onConfirm, onCancel }) => {
+export const ConfirmDialog = ({ visible, title, message, onConfirm, onCancel, loading }) => {
     return (
         <Modal
             visible={visible}
             transparent={true}
             animationType="fade"
-            onRequestClose={onCancel}
+            onRequestClose={loading ? null : onCancel}
         >
             <View style={{
                 flex: 1,
@@ -48,9 +48,11 @@ export const ConfirmDialog = ({ visible, title, message, onConfirm, onCancel }) 
                                 backgroundColor: '#f3f4f6',
                                 padding: 12,
                                 borderRadius: 8,
-                                alignItems: 'center'
+                                alignItems: 'center',
+                                opacity: loading ? 0.5 : 1
                             }}
                             onPress={onCancel}
+                            disabled={loading}
                         >
                             <Text style={{
                                 color: '#374151',
@@ -63,19 +65,28 @@ export const ConfirmDialog = ({ visible, title, message, onConfirm, onCancel }) 
                         <TouchableOpacity
                             style={{
                                 flex: 1,
-                                backgroundColor: '#ef4444',
+                                backgroundColor: loading ? '#fca5a5' : '#ef4444',
                                 padding: 12,
                                 borderRadius: 8,
-                                alignItems: 'center'
+                                alignItems: 'center',
+                                flexDirection: 'row',
+                                justifyContent: 'center',
+                                opacity: loading ? 0.8 : 1
                             }}
                             onPress={onConfirm}
+                            disabled={loading}
                         >
+                            {loading && (
+                                <View style={{ marginRight: 8 }}>
+                                    <ActivityIndicator size="small" color="#fff" />
+                                </View>
+                            )}
                             <Text style={{
                                 color: 'white',
                                 fontWeight: '600',
                                 fontSize: 16
                             }}>
-                                Eliminar
+                                {loading ? 'Eliminando...' : 'Eliminar'}
                             </Text>
                         </TouchableOpacity>
                     </View>
