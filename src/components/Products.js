@@ -1,9 +1,16 @@
-import { useState } from "react"
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput } from "react-native"
+import { useState, useCallback } from "react"
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, RefreshControl } from "react-native"
 import { Ionicons, Feather } from '@expo/vector-icons'
 
-export const Products = ({ products, loading, onShowProductModal, onDeleteProduct, onEditProduct, onShowBarcodeScanner }) => {
+export const Products = ({ products, loading, onShowProductModal, onDeleteProduct, onEditProduct, onShowBarcodeScanner, onRefresh }) => {
     const [searchTerm, setSearchTerm] = useState("")
+    const [refreshing, setRefreshing] = useState(false)
+
+    const handleRefresh = useCallback(async () => {
+        setRefreshing(true)
+        await onRefresh()
+        setRefreshing(false)
+    }, [onRefresh])
 
     const filteredProducts = products.filter(product =>
         product.nombre.toLowerCase().includes(searchTerm.toLowerCase())
@@ -51,13 +58,18 @@ export const Products = ({ products, loading, onShowProductModal, onDeleteProduc
                 </View>
             </View>
 
-            {loading ? (
+            {loading && !filteredProducts.length ? (
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <ActivityIndicator size="large" color="#3b82f6" />
                     <Text style={{ color: '#6b7280', marginTop: 12 }}>Cargando productos...</Text>
                 </View>
             ) : (
-                <ScrollView style={{ flex: 1, padding: 16 }}>
+                <ScrollView
+                    style={{ flex: 1, padding: 16 }}
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#3b82f6']} />
+                    }
+                >
                     {filteredProducts.map((product) => (
                         <View key={product.id} style={{ backgroundColor: 'white', borderRadius: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2, marginBottom: 12, overflow: 'hidden' }}>
                             <TouchableOpacity

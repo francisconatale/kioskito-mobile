@@ -285,6 +285,7 @@ export const useBusinessData = () => {
         saleCart,
         loading,
         error,
+        fetchData,
         fetchProducts,
         fetchSales,
         handleAddProduct,

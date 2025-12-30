@@ -30,6 +30,9 @@ const App = () => {
     sales,
     saleCart,
     loading,
+    fetchData,
+    fetchProducts,
+    fetchSales,
     handleAddProduct,
     handleUpdateProduct,
     handleDeleteProduct,
@@ -80,10 +83,17 @@ const App = () => {
     setConfirmDialog({ visible: true, productId })
   }
 
+  const [deleteProcessing, setDeleteProcessing] = useState(false)
+
   const handleConfirmDelete = async () => {
-    const result = await handleDeleteProduct(confirmDialog.productId)
-    setConfirmDialog({ visible: false, productId: null })
-    showToast(result.message, result.success ? "success" : "error")
+    setDeleteProcessing(true)
+    try {
+      const result = await handleDeleteProduct(confirmDialog.productId)
+      setConfirmDialog({ visible: false, productId: null })
+      showToast(result.message, result.success ? "success" : "error")
+    } finally {
+      setDeleteProcessing(false)
+    }
   }
 
   const handleCancelDelete = () => {
@@ -127,6 +137,7 @@ const App = () => {
           onShowProductModal={() => setShowProductModal(true)}
           onShowSaleModal={() => setShowSaleModal(true)}
           onShowSaleDetails={handleShowSaleDetails}
+          onRefresh={fetchData}
         />
       )}
       {activeTab === "products" && (
@@ -137,6 +148,7 @@ const App = () => {
           onEditProduct={handleShowProductModal}
           onDeleteProduct={handleDeleteProductRequest}
           onShowBarcodeScanner={() => handleShowBarcodeScanner("product")}
+          onRefresh={fetchProducts}
         />
       )}
       {activeTab === "sales" && (
@@ -145,6 +157,7 @@ const App = () => {
           onShowSaleModal={() => setShowSaleModal(true)}
           onShowBarcodeScanner={() => handleShowBarcodeScanner("sale")}
           onShowSaleDetails={handleShowSaleDetails}
+          onRefresh={fetchSales}
         />
       )}
       {activeTab === "analytics" && (
@@ -203,6 +216,7 @@ const App = () => {
         message="¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer."
         onConfirm={handleConfirmDelete}
         onCancel={handleCancelDelete}
+        loading={deleteProcessing}
       />
 
       {toast.visible && (

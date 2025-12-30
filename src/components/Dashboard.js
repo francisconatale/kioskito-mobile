@@ -1,13 +1,28 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native"
+import { useState, useCallback } from "react"
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from "react-native"
 import { Ionicons, Feather } from "@expo/vector-icons"
 import { calculateTotalSalesToday, calculateTotalInventoryValue } from "../utils/calculations"
 
-export const Dashboard = ({ products, sales, onShowProductModal, onShowSaleModal, onShowSaleDetails }) => {
+export const Dashboard = ({ products, sales, onShowProductModal, onShowSaleModal, onShowSaleDetails, onRefresh }) => {
     const totalSalesToday = calculateTotalSalesToday(sales)
     const totalInventoryValue = calculateTotalInventoryValue(products)
+    const [refreshing, setRefreshing] = useState(false)
+
+    const handleRefresh = useCallback(async () => {
+        setRefreshing(true)
+        if (onRefresh) {
+            await onRefresh()
+        }
+        setRefreshing(false)
+    }, [onRefresh])
 
     return (
-        <ScrollView style={styles.container}>
+        <ScrollView
+            style={styles.container}
+            refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#3b82f6']} />
+            }
+        >
             <View style={styles.statsContainer}>
                 <View style={styles.statCard}>
                     <View style={[styles.iconContainer, styles.greenIconBg]}>

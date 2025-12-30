@@ -1,9 +1,17 @@
-import { View, Text, ScrollView, TouchableOpacity } from "react-native"
+import { useState, useCallback } from "react"
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from "react-native"
 import { Ionicons } from '@expo/vector-icons'
 import { calculateTotalSalesMonth } from '../utils/calculations'
 
-export const Sales = ({ sales, onShowSaleModal, onShowBarcodeScanner, onShowSaleDetails }) => {
+export const Sales = ({ sales, onShowSaleModal, onShowBarcodeScanner, onShowSaleDetails, onRefresh }) => {
     const totalSalesMonth = calculateTotalSalesMonth(sales)
+    const [refreshing, setRefreshing] = useState(false)
+
+    const handleRefresh = useCallback(async () => {
+        setRefreshing(true)
+        await onRefresh()
+        setRefreshing(false)
+    }, [onRefresh])
 
     return (
         <View style={{ flex: 1 }}>
@@ -22,7 +30,12 @@ export const Sales = ({ sales, onShowSaleModal, onShowBarcodeScanner, onShowSale
                 </View>
             </View>
 
-            <ScrollView style={{ flex: 1, padding: 16 }}>
+            <ScrollView
+                style={{ flex: 1, padding: 16 }}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#10b981']} />
+                }
+            >
                 <View style={{ backgroundColor: 'white', padding: 16, borderRadius: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2, marginBottom: 16 }}>
                     <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#111827', marginBottom: 8 }}>Resumen de ventas</Text>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}>
