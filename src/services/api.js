@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://192.168.100.232:8080/api'
+const API_BASE_URL = 'http://192.168.100.4:8080/api'
 
 // Generic API request handler
 const apiRequest = async (endpoint, options = {}) => {
@@ -53,11 +53,14 @@ const mapVentaFromBackend = (venta) => {
 
     const mapSingleVenta = (v) => ({
         ...v,
+        tipo: v.tipo || 'VENTA',
         total: v.montoTotal,
         date: v.fecha,
         items: (v.detalles || []).map(d => ({
             productId: d.productoId,
             productName: d.productoNombre,
+            productoMarca: d.productoMarca,
+            productoDescripcion: d.productoDescripcion,
             price: d.precioUnitario,
             quantity: d.cantidad,
             subtotal: d.subtotal
@@ -183,7 +186,8 @@ export const ventasAPI = {
             montoTotal: venta.montoTotal,
             metodoPago: venta.metodoPago,
             clienteId: venta.clienteId,
-            detalles: venta.detalles // Expecting { productoId, cantidad, precioUnitario }
+            detalles: venta.detalles,
+            tipo: venta.tipo || 'VENTA'
         }
         return await apiRequest('/ventas', {
             method: 'POST',
@@ -253,6 +257,14 @@ export const clientesAPI = {
             method: 'DELETE',
         })
     },
+
+    // POST /api/clientes/{id}/pagar
+    registrarPago: async (id, monto) => {
+        return await apiRequest(`/clientes/${id}/pagar`, {
+            method: 'POST',
+            body: JSON.stringify({ monto }),
+        })
+    },
 }
 
 // Cierres de Caja API
@@ -292,6 +304,22 @@ export const cierresAPI = {
     delete: async (id) => {
         return await apiRequest(`/cierres/${id}`, {
             method: 'DELETE',
+        })
+    },
+}
+
+// Movimientos de Stock API
+export const movimientosStockAPI = {
+    // GET /api/movimientos-stock
+    getAll: async () => {
+        return await apiRequest('/movimientos-stock')
+    },
+
+    // POST /api/movimientos-stock
+    create: async (movimiento) => {
+        return await apiRequest('/movimientos-stock', {
+            method: 'POST',
+            body: JSON.stringify(movimiento),
         })
     },
 }
