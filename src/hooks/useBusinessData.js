@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react"
-import { productosAPI, ventasAPI } from "../services/api"
+import { productosAPI, ventasAPI, clientesAPI, movimientosStockAPI } from "../services/api"
 import { Alert } from "react-native"
 
 export const useBusinessData = () => {
     const [products, setProducts] = useState([])
     const [sales, setSales] = useState([])
+    const [clients, setClients] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
 
     const [saleCart, setSaleCart] = useState([])
+    const [restockCart, setRestockCart] = useState([])
+    const [movements, setMovements] = useState([])
 
     useEffect(() => {
         fetchData()
@@ -16,7 +19,7 @@ export const useBusinessData = () => {
 
     const fetchData = async () => {
         setLoading(true)
-        await Promise.all([fetchProducts(), fetchSales()])
+        await Promise.all([fetchProducts(), fetchSales(), fetchClients(), fetchMovements()])
         setLoading(false)
     }
 
@@ -43,8 +46,35 @@ export const useBusinessData = () => {
         }
     }
 
+    const fetchClients = async () => {
+        try {
+            const data = await clientesAPI.getAll()
+            setClients(data)
+        } catch (err) {
+            console.error("Error al cargar clientes:", err.message)
+        }
+    }
+
+    const fetchMovements = async () => {
+        try {
+            const data = await movimientosStockAPI.getAll()
+            setMovements(data)
+        } catch (err) {
+            console.error("Error al cargar movimientos:", err.message)
+        }
+    }
+
+    const searchClients = async (q) => {
+        try {
+            return await clientesAPI.search(q)
+        } catch (err) {
+            console.error("Error al buscar clientes:", err.message)
+            return []
+        }
+    }
+
     const handleAddProduct = async (newProduct) => {
-        if (!newProduct.nombre || !newProduct.precio || newProduct.stock === undefined) {
+        if (!newProduct.nombre || !newProduct.precio) {
             console.error("Error: Por favor completa todos los campos obligatorios")
             return { success: false, message: "Por favor completa todos los campos obligatorios" }
         }
@@ -54,7 +84,7 @@ export const useBusinessData = () => {
                 nombre: newProduct.nombre,
                 descripcion: newProduct.descripcion || "",
                 precio: parseFloat(newProduct.precio),
-                stock: parseInt(newProduct.stock),
+                stock: parseInt(newProduct.stock) || 0,
                 codigoBarras: newProduct.codigoBarras || null,
                 marca: newProduct.marca || null,
             }
@@ -68,7 +98,7 @@ export const useBusinessData = () => {
     }
 
     const handleUpdateProduct = async (id, updatedProduct) => {
-        if (!updatedProduct.nombre || !updatedProduct.precio || updatedProduct.stock === undefined) {
+        if (!updatedProduct.nombre || !updatedProduct.precio) {
             return { success: false, message: "Por favor completa todos los campos obligatorios" }
         }
 
@@ -103,7 +133,7 @@ export const useBusinessData = () => {
     const handleDeleteSale = async (id) => {
         try {
             await ventasAPI.delete(id)
-            await Promise.all([fetchSales(), fetchProducts()])
+            await Promise.all([fetchSales(), fetchProducts(), fetchClients()])
             return { success: true, message: "Venta eliminada correctamente" }
         } catch (err) {
             return { success: false, message: `No se pudo eliminar la venta: ${err.message}` }
@@ -254,11 +284,11 @@ export const useBusinessData = () => {
             const total = subtotal + recargo
 
             const ventaRequest = {
-                fecha: new Date().toISOString(), // Full ISO string with time
-                montoTotal: subtotal, // Store only the base amount without surcharge
+                fecha: new Date().toISOString(),
+                montoTotal: subtotal,
                 metodoPago: metodoPago,
                 clienteId: clienteId,
-                recargo: recargo, // Optional: useful if backend supports it
+                tipo: 'VENTA',
                 detalles: saleCart.map(item => ({
                     productoId: item.productId,
                     cantidad: item.quantity,
@@ -268,7 +298,7 @@ export const useBusinessData = () => {
 
             await ventasAPI.create(ventaRequest)
 
-            await Promise.all([fetchSales(), fetchProducts()])
+            await Promise.all([fetchSales(), fetchProducts(), fetchClients(), fetchMovements()])
             setSaleCart([])
             return { success: true, message: "Venta registrada correctamente" }
         } catch (err) {
@@ -279,10 +309,119 @@ export const useBusinessData = () => {
         }
     }
 
+    const handleAddToRestockCart = (productId, quantity) => {
+        if (!productId || !quantity) return false
+        const product = products.find(p => p.id === productId)
+        if (!product) return false
+
+        const qty = parseInt(quantity)
+        const existingItem = restockCart.find(item => item.productId === productId)
+
+        if (existingItem) {
+            setRestockCart(restockCart.map(item =>
+                item.productId === productId
+                    ? { ...item, quantity: item.quantity + qty }
+                    : item
+            ))
+        } else {
+            setRestockCart([...restockCart, {
+                productId: product.id,
+                productName: product.nombre,
+                quantity: qty,
+                price: 0 // Restock usually doesn't focus on price here, or we could add it
+            }])
+        }
+        return true
+    }
+
+    const handleRemoveFromRestockCart = (productId) => {
+        setRestockCart(restockCart.filter(item => item.productId !== productId))
+    }
+
+    const handleCompleteRestock = async () => {
+        if (restockCart.length === 0) return { success: false, message: "No hay items" }
+
+        try {
+            setLoading(true)
+
+            // Create a movement for each item in the restock cart
+            const promises = restockCart.map(item => {
+                const movRequest = {
+                    productoId: item.productId,
+                    tipo: 'ENTRADA',
+                    cantidad: item.quantity,
+                    motivo: 'RESTOCK',
+                    fecha: new Date().toISOString()
+                }
+                return movimientosStockAPI.create(movRequest)
+            })
+
+            await Promise.all(promises)
+            await Promise.all([fetchMovements(), fetchProducts()])
+
+            setRestockCart([])
+            return { success: true, message: "Restock completado correctamente" }
+        } catch (err) {
+            console.error("Error al completar restock:", err)
+            return { success: false, message: err.message }
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleAddClient = async (newClient) => {
+        if (!newClient.nombre) {
+            return { success: false, message: "El nombre es obligatorio" }
+        }
+        try {
+            setLoading(true)
+            await clientesAPI.create(newClient)
+            await fetchClients()
+            return { success: true, message: "Cliente registrado correctamente" }
+        } catch (err) {
+            console.error("Error al registrar cliente:", err)
+            return { success: false, message: `Error: ${err.message}` }
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleUpdateClient = async (id, updatedClient) => {
+        if (!updatedClient.nombre) {
+            return { success: false, message: "El nombre es obligatorio" }
+        }
+        try {
+            setLoading(true)
+            await clientesAPI.update(id, updatedClient)
+            await fetchClients()
+            return { success: true, message: "Cliente actualizado correctamente" }
+        } catch (err) {
+            console.error("Error al actualizar cliente:", err)
+            return { success: false, message: `Error: ${err.message}` }
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleRegistrarPago = async (clienteId, monto) => {
+        try {
+            setLoading(true)
+            await clientesAPI.registrarPago(clienteId, monto)
+            await Promise.all([fetchClients(), fetchSales()])
+            return { success: true, message: "Pago registrado correctamente" }
+        } catch (err) {
+            console.error("Error al registrar pago:", err)
+            return { success: false, message: `Error: ${err.message}` }
+        } finally {
+            setLoading(false)
+        }
+    }
+
     return {
         products,
         sales,
         saleCart,
+        restockCart,
         loading,
         error,
         fetchData,
@@ -298,5 +437,17 @@ export const useBusinessData = () => {
         clearCart,
         addProductToCartByBarcode,
         handleCompleteSale,
+        handleAddToRestockCart,
+        handleRemoveFromRestockCart,
+        handleCompleteRestock,
+        clearRestockCart: () => setRestockCart([]),
+        clients,
+        fetchClients,
+        searchClients,
+        handleAddClient,
+        handleUpdateClient,
+        handleRegistrarPago,
+        movements,
+        fetchMovements
     }
 }
