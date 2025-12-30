@@ -17,42 +17,42 @@ export const Products = ({ products, loading, onShowProductModal, onDeleteProduc
     )
 
     return (
-        <View style={{ flex: 1 }}>
-            <View style={{ backgroundColor: 'white', padding: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 }}>
+        <View style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
+            <View style={{ backgroundColor: 'white', padding: 16, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#111827' }}>Mis Productos</Text>
+                    <Text style={{ fontSize: 18, fontWeight: '600', color: '#111827', fontFamily: 'System' }}>Productos</Text>
                     <View style={{ flexDirection: 'row', gap: 8 }}>
                         <TouchableOpacity
-                            style={{ backgroundColor: '#f3f4f6', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#e5e7eb' }}
+                            style={{ backgroundColor: 'white', paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#E5E7EB' }}
                             onPress={onShowBarcodeScanner}
                         >
-                            <Ionicons name="barcode-outline" size={20} color="#374151" />
-                            <Text style={{ color: '#374151', fontWeight: '600', marginLeft: 4 }}>Escanear</Text>
+                            <Ionicons name="barcode-outline" size={18} color="#2563EB" />
+                            <Text style={{ color: '#2563EB', fontWeight: '600', marginLeft: 4, fontSize: 13, fontFamily: 'System' }}>Escanear</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={{ backgroundColor: '#3b82f6', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, flexDirection: 'row', alignItems: 'center' }}
+                            style={{ backgroundColor: '#2563EB', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, flexDirection: 'row', alignItems: 'center' }}
                             onPress={onShowProductModal}
                         >
-                            <Ionicons name="add" size={20} color="#fff" />
-                            <Text style={{ color: 'white', fontWeight: '600', marginLeft: 4 }}>Agregar</Text>
+                            <Ionicons name="add" size={18} color="#fff" />
+                            <Text style={{ color: 'white', fontWeight: '600', marginLeft: 4, fontSize: 13, fontFamily: 'System' }}>Agregar</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
             </View>
 
-            <View style={{ backgroundColor: 'white', paddingHorizontal: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f9fafb', borderRadius: 8, paddingHorizontal: 12, borderWidth: 1, borderColor: '#e5e7eb' }}>
-                    <Ionicons name="search" size={20} color="#9ca3af" />
+            <View style={{ backgroundColor: 'white', paddingHorizontal: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', borderRadius: 10, paddingHorizontal: 12 }}>
+                    <Ionicons name="search" size={18} color="#9CA3AF" />
                     <TextInput
-                        style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 8, fontSize: 16, color: '#111827' }}
-                        placeholder="Buscar en mis productos..."
-                        placeholderTextColor="#9ca3af"
+                        style={{ flex: 1, paddingVertical: 8, paddingHorizontal: 8, fontSize: 14, color: '#111827', fontFamily: 'System' }}
+                        placeholder="Buscar productos..."
+                        placeholderTextColor="#9CA3AF"
                         value={searchTerm}
                         onChangeText={setSearchTerm}
                     />
                     {searchTerm.length > 0 && (
                         <TouchableOpacity onPress={() => setSearchTerm("")}>
-                            <Ionicons name="close-circle" size={20} color="#9ca3af" />
+                            <Ionicons name="close-circle" size={18} color="#9CA3AF" />
                         </TouchableOpacity>
                     )}
                 </View>
@@ -60,8 +60,8 @@ export const Products = ({ products, loading, onShowProductModal, onDeleteProduc
 
             {loading && !filteredProducts.length ? (
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                    <ActivityIndicator size="large" color="#3b82f6" />
-                    <Text style={{ color: '#6b7280', marginTop: 12 }}>Cargando productos...</Text>
+                    <ActivityIndicator size="small" color="#2563EB" />
+                    <Text style={{ color: '#6B7280', marginTop: 12, fontSize: 13, fontFamily: 'System' }}>Cargando productos...</Text>
                 </View>
             ) : (
                 <ScrollView
@@ -71,42 +71,40 @@ export const Products = ({ products, loading, onShowProductModal, onDeleteProduc
                     }
                 >
                     {filteredProducts.map((product) => (
-                        <View key={product.id} style={{ backgroundColor: 'white', borderRadius: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2, marginBottom: 12, overflow: 'hidden' }}>
+                        <View key={product.id} style={{ backgroundColor: 'white', borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 10, overflow: 'hidden' }}>
                             <TouchableOpacity
-                                style={{ flexDirection: 'row', padding: 16 }}
+                                style={{ flexDirection: 'row', padding: 14 }}
                                 onPress={() => onEditProduct(product)}
                             >
-                                <View style={{ width: 48, height: 48, backgroundColor: '#f3f4f6', borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
-                                    <Feather name="package" size={24} color="#3b82f6" />
+                                <View style={{ width: 44, height: 44, backgroundColor: '#DBEAFE', borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 14 }}>
+                                    <Feather name="package" size={20} color="#2563EB" />
                                 </View>
                                 <View style={{ flex: 1 }}>
                                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                         <View style={{ flex: 1 }}>
-                                            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#111827' }}>{product.nombre}</Text>
+                                            <Text style={{ fontSize: 15, fontWeight: '600', color: '#111827', fontFamily: 'System' }}>{product.nombre}</Text>
                                             {product.marca && (
-                                                <Text style={{ fontSize: 13, color: '#3b82f6', fontWeight: '600' }}>{product.marca}</Text>
+                                                <Text style={{ fontSize: 12, color: '#2563EB', fontWeight: '500', fontFamily: 'System' }}>{product.marca}</Text>
                                             )}
                                         </View>
                                         <TouchableOpacity
-                                            style={{ backgroundColor: '#fee2e2', padding: 8, borderRadius: 8, marginLeft: 12 }}
+                                            style={{ padding: 6 }}
                                             onPress={() => onDeleteProduct(product.id)}
                                         >
-                                            <Ionicons name="trash-outline" size={18} color="#ef4444" />
+                                            <Ionicons name="trash-outline" size={16} color="#9CA3AF" />
                                         </TouchableOpacity>
                                     </View>
 
                                     {product.descripcion && (
-                                        <Text style={{ fontSize: 14, color: '#6b7280', marginTop: 2 }} numberOfLines={1}>{product.descripcion}</Text>
+                                        <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 2, fontFamily: 'System' }} numberOfLines={1}>{product.descripcion}</Text>
                                     )}
 
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
-                                        <View style={{ backgroundColor: '#f0fdf4', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, marginRight: 12 }}>
-                                            <Text style={{ color: '#10b981', fontWeight: 'bold', fontSize: 15 }}>${product.precio}</Text>
-                                        </View>
-                                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                            <Feather name="layers" size={12} color={product.stock < 10 ? '#ef4444' : '#6b7280'} style={{ marginRight: 4 }} />
-                                            <Text style={{ fontSize: 13, color: product.stock < 10 ? '#ef4444' : '#6b7280', fontWeight: '500' }}>
-                                                Stock: {product.stock}
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+                                        <Text style={{ color: '#111827', fontWeight: 'bold', fontSize: 16, fontFamily: 'System' }}>${product.precio}</Text>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: product.stock < 10 ? '#FEE2E2' : '#F3F4F6', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
+                                            <Feather name="layers" size={10} color={product.stock < 10 ? '#DC2626' : '#6B7280'} style={{ marginRight: 4 }} />
+                                            <Text style={{ fontSize: 11, color: product.stock < 10 ? '#DC2626' : '#6B7280', fontWeight: '600', fontFamily: 'System' }}>
+                                                {product.stock} un.
                                             </Text>
                                         </View>
                                     </View>
