@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity } from "react-native"
+import { View, Text, TouchableOpacity, Platform } from "react-native"
 import { Ionicons, Feather } from '@expo/vector-icons'
 
 export const BottomNavigation = ({ activeTab, onTabChange }) => {
@@ -11,7 +11,14 @@ export const BottomNavigation = ({ activeTab, onTabChange }) => {
     ]
 
     return (
-        <View style={{ flexDirection: 'row', backgroundColor: 'white', borderTopWidth: 1, borderTopColor: '#e5e7eb', padding: 8 }}>
+        <View style={{
+            flexDirection: 'row',
+            backgroundColor: 'white',
+            borderTopWidth: 1,
+            borderTopColor: '#e5e7eb',
+            padding: 8,
+            paddingBottom: Platform.OS === 'android' ? 28 : 12 // Significantly more space for Android buttons
+        }}>
             {tabs.map((tab) => (
                 <TouchableOpacity
                     key={tab.id}

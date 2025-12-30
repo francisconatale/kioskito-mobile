@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { View, Text, SafeAreaView } from "react-native"
+import { View, Text, SafeAreaView, Platform, StatusBar, Image } from "react-native"
 import { Dashboard } from "./src/components/Dashboard"
 import { Products } from "./src/components/Products" // Keep for safety if needed or remove but I'll replace usage
 import { Inventory } from "./src/components/Inventory"
@@ -141,11 +141,18 @@ const App = () => {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
-      <View style={{ paddingHorizontal: 16, paddingVertical: 14, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#F3F4F6', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ fontSize: 18, fontWeight: '900', color: '#111827', letterSpacing: 2, textTransform: 'uppercase', fontFamily: 'System' }}>
-          Kios<Text style={{ color: '#2563EB' }}>kito</Text>
-        </Text>
+    <SafeAreaView style={{
+      flex: 1,
+      backgroundColor: '#F9FAFB',
+      paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0
+    }}>
+      <StatusBar barStyle="dark-content" backgroundColor="white" translucent={true} />
+      <View style={{ paddingHorizontal: 16, paddingVertical: 4, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#F3F4F6', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+        <Image
+          source={require('./public/kioskito.png')}
+          style={{ height: 60, width: 240 }}
+          resizeMode="contain"
+        />
       </View>
       {activeTab === "dashboard" && (
         <Dashboard
