@@ -65,7 +65,10 @@ export const SaleDetailsModal = ({ visible, onClose, sale }) => {
                                 <View style={{ flex: 1 }}>
                                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <View>
-                                            <Text style={{ fontWeight: '600', color: '#374151' }}>{item.productName}</Text>
+                                            <Text style={{ fontWeight: '600', color: '#374151' }}>
+                                                {item.productName}
+                                                {item.productoMarca && <Text style={{ color: '#3b82f6', fontWeight: '500' }}> {item.productoMarca}</Text>}
+                                            </Text>
                                             <Text style={{ fontSize: 14, color: '#6b7280' }}>
                                                 {item.quantity} x ${item.price}
                                             </Text>

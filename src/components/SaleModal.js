@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal } from "react-native"
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal, ActivityIndicator } from "react-native"
 import { Ionicons, Feather } from '@expo/vector-icons'
 
 export const SaleModal = ({
@@ -24,9 +24,11 @@ export const SaleModal = ({
 
     const [newSale, setNewSale] = useState({ productId: "", quantity: "1" })
     const [metodoPago, setMetodoPago] = useState("efectivo")
+    const [processing, setProcessing] = useState(false)
     const [clienteId, setClienteId] = useState(null)
-    const [step, setStep] = useState(1) // 1: Carrito/Agregar, 2: Pagar
+    const [step, setStep] = useState(1) // 1: Carrito/Agregar, 2: Pagar, 3: Resumen
     const [searchTerm, setSearchTerm] = useState("")
+    const [completedSaleData, setCompletedSaleData] = useState(null)
 
     const filteredProducts = products.filter(product =>
         product.nombre.toLowerCase().includes(searchTerm.toLowerCase())
@@ -41,26 +43,50 @@ export const SaleModal = ({
     }
 
     const handleCompleteSale = async () => {
-        const surchargePct = PAYMENT_OPTIONS[metodoPago]?.surcharge || 0
-        const currentTotal = saleCart.reduce((sum, item) => sum + item.subtotal, 0)
-        const recargoAmount = currentTotal * surchargePct
+        setProcessing(true)
+        try {
+            const surchargePct = PAYMENT_OPTIONS[metodoPago]?.surcharge || 0
+            const currentTotal = saleCart.reduce((sum, item) => sum + item.subtotal, 0)
+            const recargoAmount = currentTotal * surchargePct
+            const finalTotal = currentTotal + recargoAmount
 
-        const result = await onCompleteSale(metodoPago, clienteId, recargoAmount)
-        if (result && result.success) {
-            setNewSale({ productId: "", quantity: "1" })
-            setMetodoPago("efectivo")
-            setClienteId(null)
-            onClose()
+            const result = await onCompleteSale(metodoPago, clienteId, recargoAmount)
+            if (result && result.success) {
+                setCompletedSaleData({
+                    total: finalTotal,
+                    subtotal: currentTotal,
+                    surcharge: recargoAmount,
+                    method: metodoPago,
+                    methodLabel: PAYMENT_OPTIONS[metodoPago]?.label,
+                    itemsCount: saleCart.reduce((acc, item) => acc + item.quantity, 0)
+                })
+                setStep(3)
+            }
+        } finally {
+            setProcessing(false)
         }
     }
 
     const cartTotal = saleCart.reduce((sum, item) => sum + item.subtotal, 0)
 
     const handleClose = () => {
+        // Reset full state
         onClearCart()
         setNewSale({ productId: "", quantity: "1" })
+        setMetodoPago("efectivo")
+        setClienteId(null)
+        setCompletedSaleData(null)
         setStep(1)
         onClose()
+    }
+
+    const startNewSale = () => {
+        onClearCart()
+        setNewSale({ productId: "", quantity: "1" })
+        setMetodoPago("efectivo")
+        setClienteId(null)
+        setCompletedSaleData(null)
+        setStep(1)
     }
 
     return (
@@ -75,7 +101,7 @@ export const SaleModal = ({
                                 </TouchableOpacity>
                             )}
                             <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#111827' }}>
-                                {step === 1 ? 'Nueva Venta' : 'Finalizar Venta'}
+                                {step === 1 ? 'Nueva Venta' : step === 2 ? 'Finalizar Venta' : 'Venta Completada'}
                             </Text>
                         </View>
                         <TouchableOpacity onPress={handleClose}>
@@ -243,7 +269,7 @@ export const SaleModal = ({
                                     </TouchableOpacity>
                                 )}
                             </>
-                        ) : (
+                        ) : step === 2 ? (
                             <>
                                 {/* Step 2: Payment & Confirm */}
                                 {(() => {
@@ -312,17 +338,88 @@ export const SaleModal = ({
                                             </View>
 
                                             <TouchableOpacity
-                                                style={{ backgroundColor: '#10b981', padding: 16, borderRadius: 12, alignItems: 'center' }}
+                                                style={{
+                                                    backgroundColor: processing ? '#6ee7b7' : '#10b981',
+                                                    padding: 16,
+                                                    borderRadius: 12,
+                                                    alignItems: 'center',
+                                                    flexDirection: 'row',
+                                                    justifyContent: 'center',
+                                                    opacity: processing ? 0.8 : 1
+                                                }}
                                                 onPress={handleCompleteSale}
+                                                disabled={processing}
                                             >
+                                                {processing && (
+                                                    <View style={{ marginRight: 8 }}>
+                                                        <ActivityIndicator size="small" color="#fff" />
+                                                    </View>
+                                                )}
                                                 <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 18 }}>
-                                                    Cobrar ${Math.round(finalTotal)}
+                                                    {processing ? 'Procesando...' : `Cobrar $${Math.round(finalTotal)}`}
                                                 </Text>
                                             </TouchableOpacity>
                                         </>
                                     )
                                 })()}
                             </>
+                        ) : (
+                            <View style={{ alignItems: 'center', paddingVertical: 20 }}>
+                                <View style={{
+                                    width: 80, height: 80,
+                                    backgroundColor: '#d1fae5',
+                                    borderRadius: 40,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginBottom: 24
+                                }}>
+                                    <Ionicons name="checkmark" size={48} color="#10b981" />
+                                </View>
+
+                                <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#111827', marginBottom: 8 }}>
+                                    ¡Venta Exitosa!
+                                </Text>
+                                <Text style={{ fontSize: 16, color: '#6b7280', marginBottom: 32 }}>
+                                    La transacción se registró correctamente
+                                </Text>
+
+                                <View style={{ width: '100%', backgroundColor: '#f9fafb', borderRadius: 16, padding: 20, marginBottom: 32 }}>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+                                        <Text style={{ color: '#6b7280' }}>Total cobrado</Text>
+                                        <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#111827' }}>
+                                            ${Math.round(completedSaleData?.total || 0)}
+                                        </Text>
+                                    </View>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+                                        <Text style={{ color: '#6b7280' }}>Método de pago</Text>
+                                        <Text style={{ fontWeight: '500', color: '#374151' }}>
+                                            {completedSaleData?.methodLabel}
+                                        </Text>
+                                    </View>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                        <Text style={{ color: '#6b7280' }}>Productos</Text>
+                                        <Text style={{ fontWeight: '500', color: '#374151' }}>
+                                            {completedSaleData?.itemsCount} items
+                                        </Text>
+                                    </View>
+                                </View>
+
+                                <View style={{ width: '100%', gap: 12 }}>
+                                    <TouchableOpacity
+                                        style={{ backgroundColor: '#3b82f6', padding: 16, borderRadius: 12, alignItems: 'center' }}
+                                        onPress={startNewSale}
+                                    >
+                                        <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>Nueva Venta</Text>
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity
+                                        style={{ backgroundColor: 'white', padding: 16, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: '#e5e7eb' }}
+                                        onPress={handleClose}
+                                    >
+                                        <Text style={{ color: '#374151', fontWeight: 'bold', fontSize: 16 }}>Cerrar</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
                         )}
                     </ScrollView>
                 </View >
