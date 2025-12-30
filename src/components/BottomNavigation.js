@@ -4,8 +4,9 @@ import { Ionicons, Feather } from '@expo/vector-icons'
 export const BottomNavigation = ({ activeTab, onTabChange }) => {
     const tabs = [
         { id: "dashboard", label: "Inicio", icon: "trending-up" },
-        { id: "products", label: "Productos", icon: "package", iconSet: "feather" },
+        { id: "inventory", label: "Inventario", icon: "package", iconSet: "feather" },
         { id: "sales", label: "Ventas", icon: "cart-outline" },
+        { id: "debtors", label: "Deudores", icon: "people-outline" },
         { id: "analytics", label: "Análisis", icon: "bar-chart-outline" },
     ]
 
