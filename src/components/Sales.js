@@ -14,69 +14,117 @@ export const Sales = ({ sales, onShowSaleModal, onShowBarcodeScanner, onShowSale
     }, [onRefresh])
 
     return (
-        <View style={{ flex: 1 }}>
-            <View style={{ backgroundColor: 'white', padding: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 }}>
+        <View style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
+            <View style={{ backgroundColor: 'white', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#111827' }}>Registrar Venta</Text>
+                    <Text style={{ fontSize: 16, fontWeight: '600', color: '#111827', fontFamily: 'System' }}>Actividad</Text>
                     <View style={{ flexDirection: 'row', gap: 8 }}>
                         <TouchableOpacity
-                            style={{ backgroundColor: '#10b981', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, flexDirection: 'row', alignItems: 'center' }}
+                            style={{ backgroundColor: '#2563EB', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 }}
                             onPress={onShowSaleModal}
                         >
-                            <Ionicons name="add" size={20} color="#fff" />
-                            <Text style={{ color: 'white', fontWeight: '600', marginLeft: 4 }}>Manual</Text>
+                            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13, fontFamily: 'System' }}>Nueva Venta</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
             </View>
 
             <ScrollView
-                style={{ flex: 1, padding: 16 }}
+                style={{ flex: 1, paddingHorizontal: 16 }}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#10b981']} />
+                    <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#2563EB']} />
                 }
             >
-                <View style={{ backgroundColor: 'white', padding: 16, borderRadius: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2, marginBottom: 16 }}>
-                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#111827', marginBottom: 8 }}>Resumen de ventas</Text>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}>
-                        <Text style={{ color: '#6b7280' }}>Total del mes:</Text>
-                        <Text style={{ fontWeight: 'bold', color: '#10b981', fontSize: 18 }}>${totalSalesMonth}</Text>
-                    </View>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 }}>
-                        <Text style={{ color: '#6b7280' }}>Total de ventas:</Text>
-                        <Text style={{ fontWeight: 'bold', color: '#111827' }}>{sales.length}</Text>
-                    </View>
-                </View>
-
-                <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#111827', marginBottom: 12 }}>Historial</Text>
+                <View style={{ height: 16 }} />
                 {sales
+                    .filter(s => s.tipo !== 'RESTOCK')
                     .slice()
                     .reverse()
                     .map((sale) => (
                         <TouchableOpacity
                             key={sale.id}
-                            style={{ backgroundColor: 'white', padding: 16, borderRadius: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2, marginBottom: 12 }}
+                            style={{
+                                backgroundColor: 'white',
+                                paddingHorizontal: 16,
+                                paddingVertical: 12,
+                                borderRadius: 12,
+                                borderWidth: 1,
+                                borderColor: '#E5E7EB',
+                                marginBottom: 10,
+                                flexDirection: 'row',
+                                justifyContent: 'space-between',
+                                alignItems: 'center'
+                            }}
                             onPress={() => onShowSaleDetails(sale)}
                         >
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <View style={{ flex: 1 }}>
-                                    <Text style={{ fontSize: 14, color: '#6b7280' }}>
-                                        {new Date(sale.date).toLocaleDateString("es-ES")} - {new Date(sale.date).toLocaleTimeString("es-ES")}
-                                    </Text>
-                                    <Text style={{ fontSize: 12, color: '#3b82f6', marginTop: 2, fontWeight: '600' }}>
-                                        {sale.items.length} {sale.items.length === 1 ? 'producto' : 'productos'} • Ver detalle
+                            <View style={{ flex: 1 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+                                    <View style={{
+                                        paddingHorizontal: 6,
+                                        paddingVertical: 1,
+                                        borderRadius: 4,
+                                        backgroundColor: sale.tipo === 'RESTOCK' ? '#F3F4F6' : (sale.tipo === 'PAGO' ? '#DBEAFE' : '#DCFCE7'),
+                                        marginRight: 8
+                                    }}>
+                                        <Text style={{
+                                            fontSize: 10,
+                                            fontWeight: '700',
+                                            color: sale.tipo === 'RESTOCK' ? '#6B7280' : (sale.tipo === 'PAGO' ? '#2563EB' : '#16A34A'),
+                                            textTransform: 'uppercase'
+                                        }}>
+                                            {sale.tipo === 'RESTOCK' ? 'Restock' : (sale.tipo === 'PAGO' ? 'Pago' : 'Venta')}
+                                        </Text>
+                                    </View>
+                                    {sale.metodoPago?.toUpperCase() === 'FIADO' && (
+                                        <View style={{
+                                            paddingHorizontal: 6,
+                                            paddingVertical: 1,
+                                            borderRadius: 4,
+                                            backgroundColor: '#FEE2E2',
+                                            marginRight: 8
+                                        }}>
+                                            <Text style={{
+                                                fontSize: 10,
+                                                fontWeight: '700',
+                                                color: '#DC2626',
+                                                textTransform: 'uppercase'
+                                            }}>
+                                                Fiado
+                                            </Text>
+                                        </View>
+                                    )}
+                                    <Text style={{ fontSize: 14, color: '#111827', fontFamily: 'System' }}>
+                                        #{sale.id.toString().slice(-4)}
                                     </Text>
                                 </View>
-                                <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#10b981' }}>${sale.total}</Text>
+                                <Text style={{ fontSize: 12, color: '#6B7280', fontFamily: 'System' }}>
+                                    {new Date(sale.date).toLocaleDateString("es-ES")} · {new Date(sale.date).toLocaleTimeString("es-ES", { hour: '2-digit', minute: '2-digit' })}
+                                    {sale.tipo === 'PAGO'
+                                        ? ` · Pago de ${sale.clienteNombre || 'Cliente'}`
+                                        : ` · ${sale.items?.length || 0} ${sale.items?.length === 1 ? 'producto' : 'productos'}`
+                                    }
+                                </Text>
+                            </View>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                                <Text style={{
+                                    fontSize: 15,
+                                    fontWeight: '600',
+                                    color: sale.tipo === 'RESTOCK' ? '#6B7280' : (sale.tipo === 'PAGO' ? '#2563EB' : '#16A34A'),
+                                    fontFamily: 'System'
+                                }}>
+                                    ${sale.total}
+                                </Text>
+                                <Ionicons name="chevron-forward" size={14} color="#D1D5DB" />
                             </View>
                         </TouchableOpacity>
                     ))}
                 {sales.length === 0 && (
-                    <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 48 }}>
-                        <Ionicons name="cart-outline" size={48} color="#d1d5db" />
-                        <Text style={{ color: '#9ca3af', marginTop: 16 }}>No hay ventas registradas</Text>
+                    <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 64 }}>
+                        <Ionicons name="list-outline" size={40} color="#E5E7EB" />
+                        <Text style={{ color: '#9CA3AF', marginTop: 12, fontSize: 14, fontFamily: 'System' }}>No hay actividad registrada</Text>
                     </View>
                 )}
+                <View style={{ height: 32 }} />
             </ScrollView>
         </View>
     )
