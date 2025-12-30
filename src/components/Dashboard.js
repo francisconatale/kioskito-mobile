@@ -1,10 +1,11 @@
 import { useState, useCallback } from "react"
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from "react-native"
 import { Ionicons, Feather } from "@expo/vector-icons"
-import { calculateTotalSalesToday, calculateTotalInventoryValue } from "../utils/calculations"
+import { calculateTotalSalesToday, calculateRealCashToday, calculateTotalInventoryValue } from "../utils/calculations"
 
 export const Dashboard = ({ products, sales, onShowProductModal, onShowSaleModal, onShowSaleDetails, onRefresh }) => {
     const totalSalesToday = calculateTotalSalesToday(sales)
+    const realCashToday = calculateRealCashToday(sales)
     const totalInventoryValue = calculateTotalInventoryValue(products)
     const [refreshing, setRefreshing] = useState(false)
 
@@ -23,24 +24,6 @@ export const Dashboard = ({ products, sales, onShowProductModal, onShowSaleModal
                 <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#3b82f6']} />
             }
         >
-            <View style={styles.statsContainer}>
-                <View style={styles.statCard}>
-                    <View style={[styles.iconContainer, styles.greenIconBg]}>
-                        <Ionicons name="cash-outline" size={20} color="#10b981" />
-                    </View>
-                    <Text style={styles.statLabel}>Ventas hoy</Text>
-                    <Text style={styles.statValue}>${totalSalesToday}</Text>
-                </View>
-
-                <View style={styles.statCard}>
-                    <View style={[styles.iconContainer, styles.blueIconBg]}>
-                        <Feather name="package" size={20} color="#3b82f6" />
-                    </View>
-                    <Text style={styles.statLabel}>Productos</Text>
-                    <Text style={styles.statValue}>{products.length}</Text>
-                </View>
-            </View>
-
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Acciones rápidas</Text>
                 <View style={styles.actionsContainer}>
@@ -59,14 +42,30 @@ export const Dashboard = ({ products, sales, onShowProductModal, onShowSaleModal
             <View style={styles.salesCard}>
                 <Text style={styles.sectionTitle}>Ventas recientes</Text>
                 {sales
+                    .filter(s => s.tipo !== 'RESTOCK')
                     .slice(-5)
                     .reverse()
                     .map((sale) => (
                         <TouchableOpacity key={sale.id} style={styles.saleItem} onPress={() => onShowSaleDetails(sale)}>
                             <View style={styles.saleInfo}>
-                                <Text style={styles.saleProductCount}>
-                                    {sale.items.length} {sale.items.length === 1 ? "producto" : "productos"}
-                                </Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    {sale.metodoPago?.toUpperCase() === 'FIADO' && (
+                                        <View style={{ backgroundColor: '#fee2e2', paddingHorizontal: 4, paddingVertical: 1, borderRadius: 4, marginRight: 6 }}>
+                                            <Text style={{ fontSize: 10, color: '#dc2626', fontWeight: 'bold' }}>FIADO</Text>
+                                        </View>
+                                    )}
+                                    {sale.tipo === 'PAGO' && (
+                                        <View style={{ backgroundColor: '#dbeafe', paddingHorizontal: 4, paddingVertical: 1, borderRadius: 4, marginRight: 6 }}>
+                                            <Text style={{ fontSize: 10, color: '#2563EB', fontWeight: 'bold' }}>PAGO</Text>
+                                        </View>
+                                    )}
+                                    <Text style={styles.saleProductCount}>
+                                        {sale.tipo === 'PAGO'
+                                            ? `Pago de ${sale.clienteNombre || 'Cliente'}`
+                                            : `${sale.items.length} ${sale.items.length === 1 ? "producto" : "productos"}`
+                                        }
+                                    </Text>
+                                </View>
                                 <Text style={styles.saleTime}>
                                     {new Date(sale.date).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
                                 </Text>
@@ -98,11 +97,8 @@ const styles = StyleSheet.create({
         backgroundColor: "white",
         padding: 16,
         borderRadius: 12,
-        shadowColor: "#000",
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        shadowOffset: { width: 0, height: 2 },
-        elevation: 2,
+        borderWidth: 1,
+        borderColor: "#E5E7EB",
     },
     iconContainer: {
         width: 40,
