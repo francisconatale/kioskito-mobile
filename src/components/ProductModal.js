@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { productosAPI } from '../services/api'
 
 export const ProductModal = ({ visible, onClose, onAddProduct, onUpdateProduct, onShowBarcodeScanner, initialProduct }) => {
-    const [newProduct, setNewProduct] = useState({ nombre: "", precio: "", stock: "", descripcion: "", codigoBarras: "", marca: "" })
+    const [newProduct, setNewProduct] = useState({ nombre: "", precio: "", descripcion: "", codigoBarras: "", marca: "" })
     const [error, setError] = useState("")
     const [loadingBarcode, setLoadingBarcode] = useState(false)
     const [barcodeInfo, setBarcodeInfo] = useState("")
@@ -14,14 +14,13 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onUpdateProduct, 
             setNewProduct({
                 nombre: initialProduct.nombre || "",
                 precio: initialProduct.precio?.toString() || "",
-                stock: initialProduct.stock?.toString() || "",
                 descripcion: initialProduct.descripcion || "",
                 codigoBarras: initialProduct.codigoBarras || "",
                 marca: initialProduct.marca || "",
                 id: initialProduct.id
             })
         } else {
-            setNewProduct({ nombre: "", precio: "", stock: "", descripcion: "", codigoBarras: "", marca: "" })
+            setNewProduct({ nombre: "", precio: "", descripcion: "", codigoBarras: "", marca: "" })
         }
     }, [initialProduct, visible])
 
@@ -90,7 +89,7 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onUpdateProduct, 
         }
 
         if (result.success) {
-            setNewProduct({ nombre: "", precio: "", stock: "", descripcion: "", codigoBarras: "", marca: "" })
+            setNewProduct({ nombre: "", precio: "", descripcion: "", codigoBarras: "", marca: "" })
             onClose()
         } else {
             setError(result.message)
@@ -101,7 +100,7 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onUpdateProduct, 
         setError("")
         setBarcodeInfo("")
         setLoadingBarcode(false)
-        setNewProduct({ nombre: "", precio: "", stock: "", descripcion: "", codigoBarras: "", marca: "" })
+        setNewProduct({ nombre: "", precio: "", descripcion: "", codigoBarras: "", marca: "" })
         onClose()
     }
 
@@ -116,39 +115,36 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onUpdateProduct, 
             }}>
                 <View style={{
                     backgroundColor: 'white',
-                    borderRadius: 16,
+                    borderRadius: 20,
                     padding: 24,
                     width: '100%',
                     maxWidth: 500,
                     maxHeight: '90%',
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.25,
-                    shadowRadius: 4,
-                    elevation: 5
+                    borderWidth: 1,
+                    borderColor: '#E5E7EB',
                 }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#111827' }}>
+                        <Text style={{ fontSize: 18, fontWeight: '600', color: '#111827', fontFamily: 'System' }}>
                             {initialProduct?.id ? 'Editar Producto' : 'Nuevo Producto'}
                         </Text>
                         <TouchableOpacity onPress={handleClose}>
-                            <Ionicons name="close" size={24} color="#6b7280" />
+                            <Ionicons name="close" size={22} color="#9CA3AF" />
                         </TouchableOpacity>
                     </View>
 
                     {error && (
                         <View style={{
-                            backgroundColor: '#fee2e2',
-                            borderLeftWidth: 4,
-                            borderLeftColor: '#ef4444',
+                            backgroundColor: '#FEE2E2',
                             padding: 12,
-                            borderRadius: 8,
+                            borderRadius: 10,
                             marginBottom: 16,
                             flexDirection: 'row',
-                            alignItems: 'center'
+                            alignItems: 'center',
+                            borderWidth: 1,
+                            borderColor: '#FECACA'
                         }}>
-                            <Ionicons name="alert-circle" size={20} color="#ef4444" style={{ marginRight: 8 }} />
-                            <Text style={{ color: '#991b1b', flex: 1, fontSize: 14 }}>
+                            <Ionicons name="alert-circle" size={18} color="#DC2626" style={{ marginRight: 8 }} />
+                            <Text style={{ color: '#991B1B', flex: 1, fontSize: 13, fontFamily: 'System' }}>
                                 {error}
                             </Text>
                         </View>
@@ -156,17 +152,17 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onUpdateProduct, 
 
                     {loadingBarcode && (
                         <View style={{
-                            backgroundColor: '#eff6ff',
-                            borderLeftWidth: 4,
-                            borderLeftColor: '#3b82f6',
+                            backgroundColor: '#DBEAFE',
                             padding: 12,
-                            borderRadius: 8,
+                            borderRadius: 10,
                             marginBottom: 16,
                             flexDirection: 'row',
-                            alignItems: 'center'
+                            alignItems: 'center',
+                            borderWidth: 1,
+                            borderColor: '#BFDBFE'
                         }}>
-                            <ActivityIndicator size="small" color="#3b82f6" style={{ marginRight: 8 }} />
-                            <Text style={{ color: '#1e40af', flex: 1, fontSize: 14 }}>
+                            <ActivityIndicator size="small" color="#2563EB" style={{ marginRight: 8 }} />
+                            <Text style={{ color: '#1E40AF', flex: 1, fontSize: 13, fontFamily: 'System' }}>
                                 Buscando producto...
                             </Text>
                         </View>
@@ -174,17 +170,17 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onUpdateProduct, 
 
                     {!loadingBarcode && barcodeInfo && barcodeInfo.includes("no encontrado") && (
                         <View style={{
-                            backgroundColor: '#fffbeb',
-                            borderLeftWidth: 4,
-                            borderLeftColor: '#f59e0b',
+                            backgroundColor: '#FEF3C7',
                             padding: 12,
-                            borderRadius: 8,
+                            borderRadius: 10,
                             marginBottom: 16,
                             flexDirection: 'row',
-                            alignItems: 'center'
+                            alignItems: 'center',
+                            borderWidth: 1,
+                            borderColor: '#FDE68A'
                         }}>
-                            <Ionicons name="alert-outline" size={20} color="#d97706" style={{ marginRight: 8 }} />
-                            <Text style={{ color: '#92400e', flex: 1, fontSize: 14 }}>
+                            <Ionicons name="alert-outline" size={18} color="#D97706" style={{ marginRight: 8 }} />
+                            <Text style={{ color: '#92400E', flex: 1, fontSize: 13, fontFamily: 'System' }}>
                                 Producto no encontrado, debe ingresarlo a mano
                             </Text>
                         </View>
@@ -192,27 +188,27 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onUpdateProduct, 
 
                     <ScrollView showsVerticalScrollIndicator={false}>
                         <View style={{ marginBottom: 16 }}>
-                            <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 }}>Nombre del producto *</Text>
+                            <Text style={{ fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 8, fontFamily: 'System' }}>Nombre del producto *</Text>
                             <TextInput
-                                style={{ backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, color: '#111827' }}
+                                style={{ backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, padding: 10, color: '#111827', fontSize: 14, fontFamily: 'System' }}
                                 value={newProduct.nombre}
                                 onChangeText={(text) => setNewProduct({ ...newProduct, nombre: text })}
                             />
                         </View>
 
                         <View style={{ marginBottom: 16 }}>
-                            <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 }}>Marca</Text>
+                            <Text style={{ fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 8, fontFamily: 'System' }}>Marca</Text>
                             <TextInput
-                                style={{ backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, color: '#111827' }}
+                                style={{ backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, padding: 10, color: '#111827', fontSize: 14, fontFamily: 'System' }}
                                 value={newProduct.marca}
                                 onChangeText={(text) => setNewProduct({ ...newProduct, marca: text })}
                             />
                         </View>
 
                         <View style={{ marginBottom: 16 }}>
-                            <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 }}>Descripción</Text>
+                            <Text style={{ fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 8, fontFamily: 'System' }}>Descripción</Text>
                             <TextInput
-                                style={{ backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, color: '#111827' }}
+                                style={{ backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, padding: 10, color: '#111827', fontSize: 14, fontFamily: 'System' }}
                                 value={newProduct.descripcion}
                                 onChangeText={(text) => setNewProduct({ ...newProduct, descripcion: text })}
                                 multiline
@@ -221,61 +217,53 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onUpdateProduct, 
                         </View>
 
                         <View style={{ marginBottom: 16 }}>
-                            <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 }}>Código de barras</Text>
+                            <Text style={{ fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 8, fontFamily: 'System' }}>Código de barras</Text>
                             <View style={{ flexDirection: 'row', gap: 8 }}>
                                 <View style={{ flex: 1 }}>
                                     <TextInput
                                         style={{
-                                            backgroundColor: initialProduct?.id ? '#f3f4f6' : '#f9fafb',
+                                            backgroundColor: initialProduct?.id ? '#F3F4F6' : '#F9FAFB',
                                             borderWidth: 1,
-                                            borderColor: '#e5e7eb',
-                                            borderRadius: 8,
-                                            padding: 12,
-                                            color: initialProduct?.id ? '#6b7280' : '#111827'
+                                            borderColor: '#E5E7EB',
+                                            borderRadius: 10,
+                                            padding: 10,
+                                            color: initialProduct?.id ? '#9CA3AF' : '#111827',
+                                            fontSize: 14,
+                                            fontFamily: 'System'
                                         }}
-                                        placeholder="Escanea o ingresa manualmente"
+                                        placeholder="Escanear o ingresar"
                                         value={newProduct.codigoBarras}
                                         onChangeText={(text) => setNewProduct({ ...newProduct, codigoBarras: text })}
                                         keyboardType="numeric"
                                         editable={!initialProduct?.id}
                                     />
-
                                 </View>
                                 {!initialProduct?.id && (
                                     <TouchableOpacity
-                                        style={{ backgroundColor: '#3b82f6', padding: 12, borderRadius: 8, justifyContent: 'center', alignItems: 'center', minWidth: 50 }}
+                                        style={{ backgroundColor: '#F3F4F6', padding: 10, borderRadius: 10, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#E5E7EB' }}
                                         onPress={() => onShowBarcodeScanner('product', (code) => setNewProduct({ ...newProduct, codigoBarras: code }))}
                                     >
-                                        <Ionicons name="barcode-outline" size={24} color="#fff" />
+                                        <Ionicons name="barcode-outline" size={20} color="#2563EB" />
                                     </TouchableOpacity>
                                 )}
                             </View>
                         </View>
 
                         <View style={{ marginBottom: 16 }}>
-                            <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 }}>Precio *</Text>
+                            <Text style={{ fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 8, fontFamily: 'System' }}>Precio *</Text>
                             <TextInput
-                                style={{ backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, color: '#111827' }}
+                                style={{ backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, padding: 10, color: '#111827', fontSize: 14, fontFamily: 'System' }}
                                 keyboardType="numeric"
                                 value={newProduct.precio}
                                 onChangeText={(text) => setNewProduct({ ...newProduct, precio: text })}
                             />
                         </View>
 
-                        <View style={{ marginBottom: 24 }}>
-                            <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 }}>Stock inicial *</Text>
-                            <TextInput
-                                style={{ backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, color: '#111827' }}
-                                keyboardType="numeric"
-                                value={newProduct.stock}
-                                onChangeText={(text) => setNewProduct({ ...newProduct, stock: text })}
-                            />
-                        </View>
 
-                        <TouchableOpacity style={{ backgroundColor: '#3b82f6', padding: 16, borderRadius: 8, alignItems: 'center', marginBottom: 16 }} onPress={handleSave}>
+                        <TouchableOpacity style={{ backgroundColor: '#2563EB', padding: 14, borderRadius: 12, alignItems: 'center', marginBottom: 16 }} onPress={handleSave}>
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <Ionicons name="save-outline" size={20} color="#fff" />
-                                <Text style={{ color: 'white', fontWeight: 'bold', marginLeft: 8 }}>
+                                <Ionicons name="save-outline" size={18} color="#fff" />
+                                <Text style={{ color: 'white', fontWeight: '600', marginLeft: 8, fontSize: 15, fontFamily: 'System' }}>
                                     {initialProduct ? 'Actualizar Producto' : 'Guardar Producto'}
                                 </Text>
                             </View>
