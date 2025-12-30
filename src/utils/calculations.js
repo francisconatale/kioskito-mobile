@@ -1,17 +1,41 @@
 /**
- * Calculate total sales for today
+ * Calculate total sales for today (Booked revenue, including FIADO)
  */
 export const calculateTotalSalesToday = (sales) => {
     return sales
-        .filter((s) => new Date(s.date).toDateString() === new Date().toDateString())
+        .filter((s) => s.tipo === 'VENTA' && new Date(s.date).toDateString() === new Date().toDateString())
         .reduce((sum, s) => sum + s.total, 0)
 }
 
 /**
- * Calculate total sales for the month
+ * Calculate actual cash collected today (Cash sales + Debt payments)
+ */
+export const calculateRealCashToday = (sales) => {
+    return sales
+        .filter((s) =>
+            (s.tipo === 'VENTA' && s.metodoPago?.toUpperCase() !== 'FIADO' || s.tipo === 'PAGO') &&
+            new Date(s.date).toDateString() === new Date().toDateString()
+        )
+        .reduce((sum, s) => sum + s.total, 0)
+}
+
+/**
+ * Calculate total sales for the month (Booked revenue)
  */
 export const calculateTotalSalesMonth = (sales) => {
-    return sales.reduce((sum, s) => sum + s.total, 0)
+    const now = new Date();
+    return sales
+        .filter((s) => s.tipo === 'VENTA' &&
+            new Date(s.date).getMonth() === now.getMonth() &&
+            new Date(s.date).getFullYear() === now.getFullYear())
+        .reduce((sum, s) => sum + s.total, 0)
+}
+
+/**
+ * Calculate total outstanding debt to be collected
+ */
+export const calculateOutstandingDebt = (clients) => {
+    return clients.reduce((sum, c) => sum + (c.deuda > 0 ? c.deuda : 0), 0)
 }
 
 /**
@@ -25,23 +49,52 @@ export const calculateTotalInventoryValue = (products) => {
  * Aggregate product sales data from all sales
  */
 export const aggregateProductSales = (sales) => {
-    return sales.reduce((acc, sale) => {
-        sale.items.forEach(item => {
-            const existing = acc.find((p) => p.productId === item.productId)
-            if (existing) {
-                existing.quantity += item.quantity
-                existing.total += item.subtotal
-            } else {
-                acc.push({
+    return sales
+        .filter(s => s.tipo === 'VENTA')
+        .reduce((acc, sale) => {
+            if (!sale.items) return acc
+            sale.items.forEach(item => {
+                const existing = acc.find((p) => p.productId === item.productId)
+                if (existing) {
+                    existing.quantity += item.quantity
+                    existing.total += item.subtotal
+                } else {
+                    acc.push({
+                        productId: item.productId,
+                        productName: item.productName,
+                        quantity: item.quantity,
+                        total: item.subtotal,
+                    })
+                }
+            })
+            return acc
+        }, [])
+}
+
+/**
+ * Get all inventory movements (Sales and Restocks) flattened and sorted
+ */
+export const getInventoryMovements = (sales) => {
+    const movements = []
+
+    sales.forEach(sale => {
+        if (sale.tipo === 'VENTA' || sale.tipo === 'RESTOCK') {
+            sale.items?.forEach(item => {
+                movements.push({
+                    id: `${sale.id}-${item.productId}`,
+                    saleId: sale.id,
                     productId: item.productId,
                     productName: item.productName,
+                    productoMarca: item.productoMarca,
                     quantity: item.quantity,
-                    total: item.subtotal,
+                    type: sale.tipo, // 'VENTA' or 'RESTOCK'
+                    date: sale.date
                 })
-            }
-        })
-        return acc
-    }, [])
+            })
+        }
+    })
+
+    return movements.sort((a, b) => new Date(b.date) - new Date(a.date))
 }
 
 /**
