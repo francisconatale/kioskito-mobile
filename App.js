@@ -18,6 +18,7 @@ import { ConfirmDialog } from "./src/components/ConfirmDialog"
 import { useBusinessData } from "./src/hooks/useBusinessData"
 
 import { ErrorBoundary } from "./src/components/ErrorBoundary"
+import { Menu } from "./src/components/Menu"
 
 const MainApp = () => {
   const [activeTab, setActiveTab] = useState("dashboard")
@@ -262,6 +263,13 @@ const MainApp = () => {
             products={products}
             sales={sales}
             clients={clients}
+            onRefresh={fetchData}
+          />
+        )}
+        {activeTab === "menu" && (
+          <Menu
+            onNavigate={setActiveTab}
+            appMode={appMode}
             onRefresh={fetchData}
           />
         )}

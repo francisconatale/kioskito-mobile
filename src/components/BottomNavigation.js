@@ -6,10 +6,9 @@ export const BottomNavigation = ({ activeTab, onTabChange }) => {
     const insets = useSafeAreaInsets()
     const tabs = [
         { id: "dashboard", label: "Inicio", icon: "trending-up" },
-        { id: "inventory", label: "Inventario", icon: "package", iconSet: "feather" },
         { id: "sales", label: "Ventas", icon: "cart-outline" },
-        { id: "debtors", label: "Deudores", icon: "people-outline" },
-        { id: "analytics", label: "Análisis", icon: "bar-chart-outline" },
+        { id: "inventory", label: "Inventario", icon: "package", iconSet: "feather" },
+        { id: "menu", label: "Más", icon: "grid-outline" },
     ]
 
     return (
@@ -27,14 +26,14 @@ export const BottomNavigation = ({ activeTab, onTabChange }) => {
                     style={{ flex: 1, alignItems: 'center', paddingVertical: 12 }}
                     onPress={() => onTabChange(tab.id)}
                 >
-                    <View style={{ backgroundColor: activeTab === tab.id ? '#eff6ff' : 'transparent', padding: 8, borderRadius: 8 }}>
+                    <View style={{ backgroundColor: (activeTab === tab.id || (tab.id === 'menu' && ['debtors', 'analytics'].includes(activeTab))) ? '#eff6ff' : 'transparent', padding: 8, borderRadius: 8 }}>
                         {tab.iconSet === "feather" ? (
-                            <Feather name={tab.icon} size={24} color={activeTab === tab.id ? "#3b82f6" : "#9ca3af"} />
+                            <Feather name={tab.icon} size={24} color={(activeTab === tab.id || (tab.id === 'menu' && ['debtors', 'analytics'].includes(activeTab))) ? "#3b82f6" : "#9ca3af"} />
                         ) : (
-                            <Ionicons name={tab.icon} size={24} color={activeTab === tab.id ? "#3b82f6" : "#9ca3af"} />
+                            <Ionicons name={tab.icon} size={24} color={(activeTab === tab.id || (tab.id === 'menu' && ['debtors', 'analytics'].includes(activeTab))) ? "#3b82f6" : "#9ca3af"} />
                         )}
                     </View>
-                    <Text style={{ fontSize: 12, marginTop: 4, color: activeTab === tab.id ? "#3b82f6" : "#6b7280", fontWeight: activeTab === tab.id ? '600' : '400' }}>
+                    <Text style={{ fontSize: 12, marginTop: 4, color: (activeTab === tab.id || (tab.id === 'menu' && ['debtors', 'analytics'].includes(activeTab))) ? "#3b82f6" : "#6b7280", fontWeight: (activeTab === tab.id || (tab.id === 'menu' && ['debtors', 'analytics'].includes(activeTab))) ? '600' : '400' }}>
                         {tab.label}
                     </Text>
                 </TouchableOpacity>

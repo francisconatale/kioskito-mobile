@@ -59,43 +59,6 @@ export const Dashboard = ({ products, sales, onShowProductModal, onShowSaleModal
                         <Text style={styles.actionButtonText}>Nueva Venta</Text>
                     </TouchableOpacity>
                 </View>
-
-                {/* Backup Button Row */}
-                <View style={[styles.actionsContainer, { marginTop: 12 }]}>
-                    <TouchableOpacity
-                        style={[styles.actionButton, { backgroundColor: '#8B5CF6', flexDirection: 'row', gap: 8, flex: 2 }]}
-                        onPress={async () => {
-                            if (appMode === 'ONLINE') {
-                                alert("El backup local solo es necesario en modo Offline. En Online tus datos ya están seguros.");
-                                return;
-                            }
-                            const { exportData } = require('../services/backup');
-                            const result = await exportData();
-                            if (result.success) {
-                                alert(result.message || "Copia de seguridad guardada exitosamente");
-                            } else {
-                                alert("Error: " + result.message);
-                            }
-                        }}
-                    >
-                        <Ionicons name="save-outline" size={20} color="#fff" />
-                        <Text style={[styles.actionButtonText, { marginTop: 0 }]}>Backup</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[styles.actionButton, { backgroundColor: '#F59E0B', flexDirection: 'row', gap: 8, flex: 1.5 }]}
-                        onPress={async () => {
-                            if (appMode === 'ONLINE') return;
-                            const { importData } = require('../services/backup');
-                            const result = await importData();
-                            alert(result.message);
-                            if (result.success && onRefresh) onRefresh();
-                        }}
-                    >
-                        <Ionicons name="cloud-upload-outline" size={20} color="#fff" />
-                        <Text style={[styles.actionButtonText, { marginTop: 0 }]}>Restaurar</Text>
-                    </TouchableOpacity>
-                </View>
             </View>
 
             <View style={styles.salesCard}>
