@@ -6,7 +6,8 @@ export const ClientModal = ({ visible, onClose, onAddClient, onUpdateClient, ini
     const [client, setClient] = useState({
         nombre: "",
         telefono: "",
-        email: ""
+        email: "",
+        deuda: 0
     })
     const [processing, setProcessing] = useState(false)
 
@@ -15,13 +16,15 @@ export const ClientModal = ({ visible, onClose, onAddClient, onUpdateClient, ini
             setClient({
                 nombre: initialClient.nombre || "",
                 telefono: initialClient.telefono || "",
-                email: initialClient.email || ""
+                email: initialClient.email || "",
+                deuda: initialClient.deuda || 0
             })
         } else {
             setClient({
                 nombre: "",
                 telefono: "",
-                email: ""
+                email: "",
+                deuda: 0
             })
         }
     }, [initialClient, visible])

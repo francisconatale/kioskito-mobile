@@ -270,6 +270,7 @@ const MainApp = () => {
           <Menu
             onNavigate={setActiveTab}
             appMode={appMode}
+            onToggleMode={toggleAppMode}
             onRefresh={fetchData}
           />
         )}

@@ -1,10 +1,9 @@
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from "react-native"
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert } from "react-native"
 import { Ionicons } from '@expo/vector-icons'
 import { exportData, importData } from '../services/backup'
 
-export const Menu = ({ onNavigate, appMode, onRefresh }) => {
+export const Menu = ({ onNavigate, appMode, onRefresh, onToggleMode }) => {
 
-    // Helper to handle backup actions
     const handleBackup = async () => {
         if (appMode === 'ONLINE') {
             alert("El backup local solo es necesario en modo Offline. En Online tus datos ya están seguros.");
@@ -25,6 +24,32 @@ export const Menu = ({ onNavigate, appMode, onRefresh }) => {
         if (result.success && onRefresh) onRefresh();
     }
 
+    const handleClearDB = async () => {
+        if (appMode === 'ONLINE') {
+            Alert.alert("Acción no permitida", "Esta opción solo está disponible para limpiar la base de datos local (Offline).");
+            return;
+        }
+
+        Alert.alert(
+            "¿Borrar TODOS los datos?",
+            "Esta acción eliminará permanentemente todos los productos, ventas y clientes almacenados en este dispositivo. No se puede deshacer.\n\nSe recomienda hacer un Backup antes.",
+            [
+                { text: "Cancelar", style: "cancel" },
+                {
+                    text: "Sí, Borrar Todo",
+                    style: "destructive",
+                    onPress: async () => {
+                        const { clearDatabase } = require('../services/db');
+                        const result = await clearDatabase();
+                        alert(result.message);
+                        if (result.success && onRefresh) onRefresh();
+                    }
+                }
+            ]
+        );
+    }
+
+
     const menuItems = [
         {
             id: 'debtors',
@@ -44,6 +69,14 @@ export const Menu = ({ onNavigate, appMode, onRefresh }) => {
 
     const settingsItems = [
         {
+            id: 'mode',
+            label: 'Modo de Almacenamiento',
+            subtitle: appMode === 'ONLINE' ? 'Nube - Datos sincronizados' : 'Dispositivo - Sin internet',
+            icon: appMode === 'ONLINE' ? 'cloud-outline' : 'phone-portrait-outline',
+            color: appMode === 'ONLINE' ? '#2563EB' : '#D97706',
+            action: onToggleMode
+        },
+        {
             id: 'backup',
             label: 'Realizar Copia de Seguridad',
             subtitle: 'Exportar datos a un archivo',
@@ -58,6 +91,14 @@ export const Menu = ({ onNavigate, appMode, onRefresh }) => {
             icon: 'cloud-upload-outline',
             color: '#10B981',
             action: handleRestore
+        },
+        {
+            id: 'reset_db',
+            label: 'Restablecer Base de Datos',
+            subtitle: 'Borrar todos los datos locales (Solo Offline)',
+            icon: 'trash-outline',
+            color: '#EF4444',
+            action: handleClearDB
         }
     ]
 

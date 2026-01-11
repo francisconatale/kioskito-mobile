@@ -24,27 +24,7 @@ export const Dashboard = ({ products, sales, onShowProductModal, onShowSaleModal
                 <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#3b82f6']} />
             }
         >
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <Text style={{ fontSize: 13, color: '#666' }}>
-                    Modo actual: <Text style={{ fontWeight: 'bold', color: appMode === 'ONLINE' ? '#2563EB' : '#D97706' }}>{appMode}</Text>
-                </Text>
-                <TouchableOpacity
-                    onPress={onToggleMode}
-                    style={{
-                        backgroundColor: '#fff',
-                        paddingHorizontal: 10,
-                        paddingVertical: 6,
-                        borderRadius: 20,
-                        borderWidth: 1,
-                        borderColor: '#e5e7eb',
-                        flexDirection: 'row',
-                        alignItems: 'center'
-                    }}
-                >
-                    <Ionicons name={appMode === 'ONLINE' ? "cloud-outline" : "wifi-outline"} size={14} color="#666" style={{ marginRight: 4 }} />
-                    <Text style={{ fontSize: 11, fontWeight: '600' }}>Cambiar a {appMode === 'ONLINE' ? 'OFFLINE' : 'ONLINE'}</Text>
-                </TouchableOpacity>
-            </View>
+            {/* Mode toggle moved to Menu */}
 
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Acciones rápidas</Text>

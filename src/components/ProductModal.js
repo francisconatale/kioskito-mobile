@@ -30,20 +30,6 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onUpdateProduct, 
         setSuccessMessage("")
     }, [initialProduct, visible])
 
-    // ... (Debounced barcode lookup - keeping existing code implicitly by not touching it, but I need to be careful with replace range. 
-    // Wait, I can't easily skip lines in replace_file_content if they are in the middle of a chunk.
-    // I will replace just the state declaration and handleSave modifications separately or carefully.
-    // Let's do state declaration first at top.
-
-    // Actually, I can just update the state declarations at the top.
-
-    // And then handleSave.
-
-    // Let's split this into two calls for safety or use a larger chunk if they are close.
-    // They are not that close.
-    // I already sent one tool call for the JSX.
-    // This tool call is for the logic.
-
     const handleSave = async () => {
         setError("")
         setSuccessMessage("")
@@ -57,18 +43,10 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onUpdateProduct, 
             }
 
             if (result.success) {
-                setSuccessMessage(result.message || "Producto guardado correctamente")
-                // Optional: Close after delay or keep open to add more?
-                // User said "alerta pero con un mensaje en el modal". 
-                // Usually implies they want to see it there. 
-                // To support "adding multiple", we might clear the form if it's a new product.
                 if (!newProduct.id) {
                     setNewProduct({ nombre: "", precio: "", descripcion: "", codigoBarras: "", marca: "" })
-                    // Don't close, let them see the message and add another
-                } else {
-                    // If editing, maybe close after a delay?
-                    setTimeout(() => onClose(), 1500)
                 }
+                onClose()
             } else {
                 setError(result.message)
             }

@@ -21,6 +21,25 @@ const getDB = async () => {
     return db;
 };
 
+export const clearDatabase = async () => {
+    const database = await getDB();
+    try {
+        await database.withTransactionAsync(async () => {
+            await database.runAsync('DELETE FROM detalle_ventas');
+            await database.runAsync('DELETE FROM ventas');
+            await database.runAsync('DELETE FROM movimientos_stock');
+            await database.runAsync('DELETE FROM productos');
+            await database.runAsync('DELETE FROM clientes');
+            // Reset sequences
+            await database.runAsync('DELETE FROM sqlite_sequence');
+        });
+        return { success: true, message: 'Base de datos limpiada correctamente' };
+    } catch (error) {
+        console.error('Error clearing database:', error);
+        return { success: false, message: 'Error al limpiar la base de datos: ' + error.message };
+    }
+};
+
 export const initDB = async () => {
     const database = await getDB();
     try {
@@ -297,18 +316,30 @@ export const clientesAPI = {
 
     create: async (cliente) => {
         const database = await getDB();
+        const deuda = cliente.deuda || 0;
         const result = await database.runAsync(
-            'INSERT INTO clientes (nombre, email, telefono) VALUES (?, ?, ?)',
-            [cliente.nombre, cliente.email, cliente.telefono]
+            'INSERT INTO clientes (nombre, email, telefono, deuda) VALUES (?, ?, ?, ?)',
+            [cliente.nombre, cliente.email, cliente.telefono, deuda]
         );
-        return { ...cliente, id: result.lastInsertRowId };
+        return { ...cliente, id: result.lastInsertRowId, deuda };
     },
 
     update: async (id, cliente) => {
         const database = await getDB();
+        // If deuda is provided in update, use it, otherwise keep existing?
+        // Usually update provides full object. If partial, we need to be careful.
+        // Assuming full object for restore.
+        // However, for normal "edit client" from UI, we might not pass debt and accidentally query 0?
+        // The UI usually fetches client, edits fields, saves back. So debt should be in the object.
+        // Let's assume passed client has correct debt.
+
+        // Wait, if I edit a client in UI (change name), does it pass debt?
+        // ClientModal uses `initialClient`. If `initialClient` has `deuda`, state has `deuda`?
+        // I should check ClientModal later to be safe, but for restore it definitely passes it.
+
         await database.runAsync(
-            'UPDATE clientes SET nombre = ?, email = ?, telefono = ? WHERE id = ?',
-            [cliente.nombre, cliente.email, cliente.telefono, id]
+            'UPDATE clientes SET nombre = ?, email = ?, telefono = ?, deuda = ? WHERE id = ?',
+            [cliente.nombre, cliente.email, cliente.telefono, cliente.deuda || 0, id]
         );
         return { ...cliente, id };
     },
