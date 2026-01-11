@@ -125,7 +125,7 @@ export const Debtors = ({ clients, sales, onRegistrarPago, onShowSaleDetails, on
             <View style={{ flex: 1 }}>
                 <View style={{ padding: 20, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#E5E7EB' }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                        <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#111827' }}>Deudores (Fiado)</Text>
+                        <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#111827' }}>Deudores</Text>
                         <TouchableOpacity
                             style={{
                                 backgroundColor: '#2563EB',

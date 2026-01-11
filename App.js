@@ -220,7 +220,14 @@ const MainApp = () => {
             onShowSaleDetails={handleShowSaleDetails}
             onRefresh={fetchData}
             appMode={appMode}
-            onToggleMode={toggleAppMode}
+            onToggleMode={async () => {
+              const newMode = await toggleAppMode()
+              showToast(
+                `Modo cambiado a ${newMode === 'ONLINE' ? 'ONLINE (Nube)' : 'OFFLINE (Local)'}`,
+                newMode === 'ONLINE' ? 'success' : 'warning' // Reuse warning color logic if supported or just standard
+              )
+              // Since showToast supports success/error/warning?
+            }}
           />
         )}
         {activeTab === "inventory" && (
@@ -359,7 +366,7 @@ const MainApp = () => {
           top: 60,
           left: 16,
           right: 16,
-          backgroundColor: toast.type === 'success' ? '#16A34A' : '#DC2626',
+          backgroundColor: toast.type === 'success' ? '#16A34A' : toast.type === 'warning' ? '#D97706' : '#DC2626',
           padding: 14,
           borderRadius: 12,
           shadowColor: '#000',

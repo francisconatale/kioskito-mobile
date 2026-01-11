@@ -50,10 +50,11 @@ export const Menu = ({ onNavigate, appMode, onRefresh, onToggleMode }) => {
     }
 
 
+    // Menu items configuration
     const menuItems = [
         {
             id: 'debtors',
-            label: 'Deudores y Fiados',
+            label: 'Deudores',
             subtitle: 'Gestionar cuentas corrientes y pagos',
             icon: 'people-outline',
             color: '#F59E0B'
@@ -70,7 +71,7 @@ export const Menu = ({ onNavigate, appMode, onRefresh, onToggleMode }) => {
     const settingsItems = [
         {
             id: 'mode',
-            label: 'Modo de Almacenamiento',
+            label: 'Modo de almacenamiento',
             subtitle: appMode === 'ONLINE' ? 'Nube - Datos sincronizados' : 'Dispositivo - Sin internet',
             icon: appMode === 'ONLINE' ? 'cloud-outline' : 'phone-portrait-outline',
             color: appMode === 'ONLINE' ? '#2563EB' : '#D97706',
@@ -78,7 +79,7 @@ export const Menu = ({ onNavigate, appMode, onRefresh, onToggleMode }) => {
         },
         {
             id: 'backup',
-            label: 'Realizar Copia de Seguridad',
+            label: 'Realizar copia de seguridad',
             subtitle: 'Exportar datos a un archivo',
             icon: 'save-outline',
             color: '#8B5CF6',
@@ -86,7 +87,7 @@ export const Menu = ({ onNavigate, appMode, onRefresh, onToggleMode }) => {
         },
         {
             id: 'restore',
-            label: 'Restaurar Copia de Seguridad',
+            label: 'Restaurar copia de seguridad',
             subtitle: 'Importar datos desde un archivo',
             icon: 'cloud-upload-outline',
             color: '#10B981',
@@ -94,8 +95,8 @@ export const Menu = ({ onNavigate, appMode, onRefresh, onToggleMode }) => {
         },
         {
             id: 'reset_db',
-            label: 'Restablecer Base de Datos',
-            subtitle: 'Borrar todos los datos locales (Solo Offline)',
+            label: 'Restablecer base de datos',
+            subtitle: 'Borrar todos los datos locales',
             icon: 'trash-outline',
             color: '#EF4444',
             action: handleClearDB

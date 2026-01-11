@@ -33,7 +33,7 @@ export const useBusinessData = () => {
         await setMode(newMode)
         setAppMode(newMode)
         await fetchData()
-        Alert.alert("Modo cambiado", `Ahora estás en modo: ${newMode}`)
+        return newMode
     }
 
     const fetchData = async () => {
