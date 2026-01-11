@@ -1,7 +1,8 @@
-import { useState } from "react"
-import { View, Text, SafeAreaView, Platform, StatusBar, Image } from "react-native"
+import { useState, useEffect } from "react"
+import * as SplashScreen from 'expo-splash-screen'
+import { View, Text, SafeAreaView, Platform, StatusBar, Image, Animated } from "react-native"
 import { Dashboard } from "./src/components/Dashboard"
-import { Products } from "./src/components/Products" // Keep for safety if needed or remove but I'll replace usage
+import { Products } from "./src/components/Products"
 import { Inventory } from "./src/components/Inventory"
 import { Sales } from "./src/components/Sales"
 import { Debtors } from "./src/components/Debtors"
@@ -16,8 +17,11 @@ import { BottomNavigation } from "./src/components/BottomNavigation"
 import { ConfirmDialog } from "./src/components/ConfirmDialog"
 import { useBusinessData } from "./src/hooks/useBusinessData"
 
-const App = () => {
+import { ErrorBoundary } from "./src/components/ErrorBoundary"
+
+const MainApp = () => {
   const [activeTab, setActiveTab] = useState("dashboard")
+
   const [showProductModal, setShowProductModal] = useState(false)
   const [showSaleModal, setShowSaleModal] = useState(false)
   const [showRestockModal, setShowRestockModal] = useState(false)
@@ -31,6 +35,23 @@ const App = () => {
   const [selectedClient, setSelectedClient] = useState(null)
   const [selectedSale, setSelectedSale] = useState(null)
   const [toast, setToast] = useState({ visible: false, message: "", type: "success" })
+
+  // Splash Screen State
+  useEffect(() => {
+    const prepare = async () => {
+      try {
+        // Prevent auto hide
+        await SplashScreen.preventAutoHideAsync()
+      } catch (e) {
+        console.warn(e)
+      } finally {
+        // Hide splash screen
+        await SplashScreen.hideAsync()
+      }
+    }
+
+    prepare()
+  }, [])
 
   const {
     products,
@@ -60,7 +81,9 @@ const App = () => {
     handleAddClient,
     handleUpdateClient,
     handleRegistrarPago,
-    movements
+    movements,
+    appMode,
+    toggleAppMode
   } = useBusinessData()
 
   const handleShowProductModal = (product = null) => {
@@ -85,16 +108,44 @@ const App = () => {
   }
 
   const handleBarcodeScan = (scannedCode) => {
+    // If a callback is provided (e.g. from ProductModal or specific flow), use it
+    if (barcodeCallback) {
+      barcodeCallback(scannedCode)
+      return
+    }
+
+    // Otherwise use default mode logic
     if (scanMode === "product") {
-      if (barcodeCallback) {
-        barcodeCallback(scannedCode)
-      } else {
-        // Search if product exists to edit, otherwise open new
-        const product = products.find(p => p.codigoBarras === scannedCode)
-        handleShowProductModal(product || { codigoBarras: scannedCode })
-      }
+      // Search if product exists to edit, otherwise open new
+      const product = products.find(p => p.codigoBarras === scannedCode)
+      handleShowProductModal(product || { codigoBarras: scannedCode })
     } else if (scanMode === "sale") {
       addProductToCartByBarcode(scannedCode)
+    } else if (scanMode === "restock") {
+      // In restock mode, scanning a product adds it to the restock cart (single unit)
+      // First find the product
+      const product = products.find(p => p.codigoBarras === scannedCode)
+      if (product) {
+        // Find if already in cart to increment?? The RestockModal handles internal state for "New Item".
+        // BUT, RestockModal pass onShowBarcodeScanner('restock').
+        // The RestockModal is open. But scanning happens in BarcodeScanner (which overlays).
+        // If we want to add to the "new item" field in RestockModal, we need a callback.
+        // Wait, RestockModal calls: onShowBarcodeScanner('restock') - it doesn't pass a callback.
+        // So we need to handle it here OR change RestockModal to pass a callback.
+        // Changing RestockModal to pass a callback is cleaner and consistent with ProductModal.
+        // BUT, if I change RestockModal to pass a callback, the "barcodeCallback" check at top will handle it.
+        // So I don't strictly *need* a "restock" block here IF I update RestockModal.
+        // However, having a fallback or explicit handler is good.
+
+        // Let's defer to the UpdateRestockModal step to pass the callback.
+        // But if I want "background" scanning support (without explicit callback), I'd do it here.
+        // For now, let's assume we will pass a callback from RestockModal.
+        // I will add the block just in case, attempting to add to restock cart directly if possible.
+        handleAddToRestockCart(product.id, "1")
+        showToast(`Agregado: ${product.nombre}`, "success")
+      } else {
+        showToast("Producto no encontrado", "error")
+      }
     }
   }
 
@@ -141,74 +192,86 @@ const App = () => {
   }
 
   return (
+
     <SafeAreaView style={{
       flex: 1,
       backgroundColor: '#F9FAFB',
       paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0
     }}>
       <StatusBar barStyle="dark-content" backgroundColor="white" translucent={true} />
-      <View style={{ paddingHorizontal: 16, paddingVertical: 4, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#F3F4F6', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-        <Image
-          source={require('./public/kioskito.png')}
-          style={{ height: 60, width: 240 }}
-          resizeMode="contain"
-        />
+
+      {/* Main App Content */}
+      <View style={{ flex: 1 }}>
+        <View style={{ paddingHorizontal: 16, paddingVertical: 4, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#F3F4F6', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+          <Image
+            source={require('./public/kioskito.png')}
+            style={{ height: 60, width: 240 }}
+            resizeMode="contain"
+          />
+        </View>
+
+        {activeTab === "dashboard" && (
+          <Dashboard
+            products={products}
+            sales={sales}
+            onShowProductModal={() => setShowProductModal(true)}
+            onShowSaleModal={() => setShowSaleModal(true)}
+            onShowSaleDetails={handleShowSaleDetails}
+            onRefresh={fetchData}
+            appMode={appMode}
+            onToggleMode={toggleAppMode}
+          />
+        )}
+        {activeTab === "inventory" && (
+          <Inventory
+            products={products}
+            sales={sales}
+            movements={movements}
+            loading={loading}
+            onShowProductModal={() => handleShowProductModal()}
+            onEditProduct={handleShowProductModal}
+            onDeleteProduct={handleDeleteProductRequest}
+            onShowBarcodeScanner={() => handleShowBarcodeScanner("product")}
+            onShowRestockModal={() => setShowRestockModal(true)}
+            onRefresh={fetchProducts}
+          />
+        )}
+        {activeTab === "sales" && (
+          <Sales
+            sales={sales}
+            onShowSaleModal={() => setShowSaleModal(true)}
+            onShowBarcodeScanner={(mode) => handleShowBarcodeScanner(mode)}
+            onShowSaleDetails={handleShowSaleDetails}
+            onRefresh={fetchSales}
+          />
+        )}
+        {activeTab === "debtors" && (
+          <Debtors
+            clients={clients}
+            sales={sales}
+            onRegistrarPago={handleRegistrarPago}
+            onShowSaleDetails={handleShowSaleDetails}
+            onShowClientModal={handleShowClientModal}
+            onRefresh={fetchClients}
+            onShowToast={showToast}
+            loading={loading}
+          />
+        )}
+        {activeTab === "analytics" && (
+          <Analytics
+            products={products}
+            sales={sales}
+            clients={clients}
+            onRefresh={fetchData}
+          />
+        )}
+
+        <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
       </View>
-      {activeTab === "dashboard" && (
-        <Dashboard
-          products={products}
-          sales={sales}
-          onShowProductModal={() => setShowProductModal(true)}
-          onShowSaleModal={() => setShowSaleModal(true)}
-          onShowSaleDetails={handleShowSaleDetails}
-          onRefresh={fetchData}
-        />
-      )}
-      {activeTab === "inventory" && (
-        <Inventory
-          products={products}
-          sales={sales}
-          movements={movements}
-          loading={loading}
-          onShowProductModal={() => handleShowProductModal()}
-          onEditProduct={handleShowProductModal}
-          onDeleteProduct={handleDeleteProductRequest}
-          onShowBarcodeScanner={() => handleShowBarcodeScanner("product")}
-          onShowRestockModal={() => setShowRestockModal(true)}
-          onRefresh={fetchProducts}
-        />
-      )}
-      {activeTab === "sales" && (
-        <Sales
-          sales={sales}
-          onShowSaleModal={() => setShowSaleModal(true)}
-          onShowBarcodeScanner={(mode) => handleShowBarcodeScanner(mode)}
-          onShowSaleDetails={handleShowSaleDetails}
-          onRefresh={fetchSales}
-        />
-      )}
-      {activeTab === "debtors" && (
-        <Debtors
-          clients={clients}
-          sales={sales}
-          onRegistrarPago={handleRegistrarPago}
-          onShowSaleDetails={handleShowSaleDetails}
-          onShowClientModal={handleShowClientModal}
-          onRefresh={fetchClients}
-          onShowToast={showToast}
-          loading={loading}
-        />
-      )}
-      {activeTab === "analytics" && (
-        <Analytics
-          products={products}
-          sales={sales}
-          clients={clients}
-        />
-      )}
 
-      <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
 
+
+      {/* Modals and Overlays */}
       <ProductModal
         visible={showProductModal}
         onClose={() => {
@@ -302,6 +365,18 @@ const App = () => {
         </View>
       )}
     </SafeAreaView>
+  )
+}
+
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+const App = () => {
+  return (
+    <SafeAreaProvider>
+      <ErrorBoundary>
+        <MainApp />
+      </ErrorBoundary>
+    </SafeAreaProvider>
   )
 }
 

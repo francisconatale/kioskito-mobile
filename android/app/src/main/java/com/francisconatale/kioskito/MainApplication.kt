@@ -1,4 +1,4 @@
-package com.tempexpo
+package com.francisconatale.kioskito
 
 import android.app.Application
 import android.content.res.Configuration

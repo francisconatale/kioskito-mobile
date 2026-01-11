@@ -1,4 +1,5 @@
-import { View, Text, ScrollView } from "react-native"
+import { useState, useCallback } from "react"
+import { View, Text, ScrollView, RefreshControl } from "react-native"
 import { Ionicons } from '@expo/vector-icons'
 import {
     calculateTotalSalesMonth,
@@ -10,7 +11,17 @@ import {
     countLowStockProducts
 } from '../utils/calculations'
 
-export const Analytics = ({ products, sales, clients }) => {
+export const Analytics = ({ products, sales, clients, onRefresh }) => {
+    const [refreshing, setRefreshing] = useState(false)
+
+    const handleRefresh = useCallback(async () => {
+        setRefreshing(true)
+        if (onRefresh) {
+            await onRefresh()
+        }
+        setRefreshing(false)
+    }, [onRefresh])
+
     const totalSalesMonth = calculateTotalSalesMonth(sales)
     const totalSalesToday = calculateTotalSalesToday(sales)
     const realCashToday = calculateRealCashToday(sales)
@@ -20,7 +31,12 @@ export const Analytics = ({ products, sales, clients }) => {
     const lowStockCount = countLowStockProducts(products, 10)
 
     return (
-        <ScrollView style={{ flex: 1, padding: 16 }}>
+        <ScrollView
+            style={{ flex: 1, padding: 16 }}
+            refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#2563EB']} />
+            }
+        >
             <View style={{ backgroundColor: 'white', padding: 16, borderRadius: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2, marginBottom: 16 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
                     <Ionicons name="bar-chart-outline" size={24} color="#3b82f6" />

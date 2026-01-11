@@ -75,7 +75,19 @@ export const RestockModal = ({
                                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                                         <Text style={{ fontSize: 13, fontWeight: '600', color: '#374151', fontFamily: 'System' }}>Producto a restockear</Text>
                                         <TouchableOpacity
-                                            onPress={() => onShowBarcodeScanner('restock')}
+                                            onPress={() => onShowBarcodeScanner('restock', (code) => {
+                                                // Find product by code
+                                                const product = products.find(p => p.codigoBarras === code)
+                                                if (product) {
+                                                    setNewItem({ ...newItem, productId: product.id, quantity: "1" })
+                                                    // Optional: Auto add?
+                                                    // For now just select it so user can adjust quantity
+                                                } else {
+                                                    // Handle not found?
+                                                    // Maybe set search term to code?
+                                                    setSearchTerm(code)
+                                                }
+                                            })}
                                             style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4, paddingVertical: 2 }}
                                         >
                                             <Ionicons name="scan-outline" size={16} color="#2563EB" />

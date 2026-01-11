@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } 
 import { Ionicons, Feather } from "@expo/vector-icons"
 import { calculateTotalSalesToday, calculateRealCashToday, calculateTotalInventoryValue } from "../utils/calculations"
 
-export const Dashboard = ({ products, sales, onShowProductModal, onShowSaleModal, onShowSaleDetails, onRefresh }) => {
+export const Dashboard = ({ products, sales, onShowProductModal, onShowSaleModal, onShowSaleDetails, onRefresh, appMode, onToggleMode }) => {
     const totalSalesToday = calculateTotalSalesToday(sales)
     const realCashToday = calculateRealCashToday(sales)
     const totalInventoryValue = calculateTotalInventoryValue(products)
@@ -24,6 +24,28 @@ export const Dashboard = ({ products, sales, onShowProductModal, onShowSaleModal
                 <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#3b82f6']} />
             }
         >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <Text style={{ fontSize: 13, color: '#666' }}>
+                    Modo actual: <Text style={{ fontWeight: 'bold', color: appMode === 'ONLINE' ? '#2563EB' : '#D97706' }}>{appMode}</Text>
+                </Text>
+                <TouchableOpacity
+                    onPress={onToggleMode}
+                    style={{
+                        backgroundColor: '#fff',
+                        paddingHorizontal: 10,
+                        paddingVertical: 6,
+                        borderRadius: 20,
+                        borderWidth: 1,
+                        borderColor: '#e5e7eb',
+                        flexDirection: 'row',
+                        alignItems: 'center'
+                    }}
+                >
+                    <Ionicons name={appMode === 'ONLINE' ? "cloud-outline" : "wifi-outline"} size={14} color="#666" style={{ marginRight: 4 }} />
+                    <Text style={{ fontSize: 11, fontWeight: '600' }}>Cambiar a {appMode === 'ONLINE' ? 'OFFLINE' : 'ONLINE'}</Text>
+                </TouchableOpacity>
+            </View>
+
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Acciones rápidas</Text>
                 <View style={styles.actionsContainer}>
@@ -35,6 +57,43 @@ export const Dashboard = ({ products, sales, onShowProductModal, onShowSaleModal
                     <TouchableOpacity style={[styles.actionButton, styles.greenButton]} onPress={onShowSaleModal}>
                         <Ionicons name="cart-outline" size={24} color="#fff" />
                         <Text style={styles.actionButtonText}>Nueva Venta</Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/* Backup Button Row */}
+                <View style={[styles.actionsContainer, { marginTop: 12 }]}>
+                    <TouchableOpacity
+                        style={[styles.actionButton, { backgroundColor: '#8B5CF6', flexDirection: 'row', gap: 8, flex: 2 }]}
+                        onPress={async () => {
+                            if (appMode === 'ONLINE') {
+                                alert("El backup local solo es necesario en modo Offline. En Online tus datos ya están seguros.");
+                                return;
+                            }
+                            const { exportData } = require('../services/backup');
+                            const result = await exportData();
+                            if (result.success) {
+                                alert(result.message || "Copia de seguridad guardada exitosamente");
+                            } else {
+                                alert("Error: " + result.message);
+                            }
+                        }}
+                    >
+                        <Ionicons name="save-outline" size={20} color="#fff" />
+                        <Text style={[styles.actionButtonText, { marginTop: 0 }]}>Backup</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.actionButton, { backgroundColor: '#F59E0B', flexDirection: 'row', gap: 8, flex: 1.5 }]}
+                        onPress={async () => {
+                            if (appMode === 'ONLINE') return;
+                            const { importData } = require('../services/backup');
+                            const result = await importData();
+                            alert(result.message);
+                            if (result.success && onRefresh) onRefresh();
+                        }}
+                    >
+                        <Ionicons name="cloud-upload-outline" size={20} color="#fff" />
+                        <Text style={[styles.actionButtonText, { marginTop: 0 }]}>Restaurar</Text>
                     </TouchableOpacity>
                 </View>
             </View>

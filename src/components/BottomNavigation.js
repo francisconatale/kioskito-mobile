@@ -1,7 +1,9 @@
 import { View, Text, TouchableOpacity, Platform } from "react-native"
 import { Ionicons, Feather } from '@expo/vector-icons'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export const BottomNavigation = ({ activeTab, onTabChange }) => {
+    const insets = useSafeAreaInsets()
     const tabs = [
         { id: "dashboard", label: "Inicio", icon: "trending-up" },
         { id: "inventory", label: "Inventario", icon: "package", iconSet: "feather" },
@@ -17,7 +19,7 @@ export const BottomNavigation = ({ activeTab, onTabChange }) => {
             borderTopWidth: 1,
             borderTopColor: '#e5e7eb',
             padding: 8,
-            paddingBottom: Platform.OS === 'android' ? 28 : 12 // Significantly more space for Android buttons
+            paddingBottom: Math.max(insets.bottom, 12) + 8 // Dynamic safe area + visual padding
         }}>
             {tabs.map((tab) => (
                 <TouchableOpacity

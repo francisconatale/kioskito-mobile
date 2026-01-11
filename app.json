@@ -1,10 +1,38 @@
 {
   "expo": {
-    "name": "kioskito",
+    "name": "Kioskito",
     "slug": "kioskito",
     "version": "1.0.0",
+    "icon": "./public/kioskito.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./public/kioskito.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "plugins": [
-      "expo-font"
-    ]
+      "expo-font",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ],
+      "expo-sqlite"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "c0bc021c-c60d-432b-bcb8-cf4e5f781741"
+      }
+    },
+    "android": {
+      "package": "com.francisconatale.kioskito",
+      "adaptiveIcon": {
+        "foregroundImage": "./public/kioskito.png",
+        "backgroundColor": "#ffffff"
+      }
+    }
   }
 }

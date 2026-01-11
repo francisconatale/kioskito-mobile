@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://192.168.100.4:8080/api'
+const API_BASE_URL = 'https://kioskito-api-1.onrender.com/api'
 
 // Generic API request handler
 const apiRequest = async (endpoint, options = {}) => {
@@ -6,6 +6,9 @@ const apiRequest = async (endpoint, options = {}) => {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
             headers: {
                 'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache',
+                'Expires': '0',
                 ...options.headers,
             },
             ...options,

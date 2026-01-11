@@ -75,7 +75,7 @@ export const Sales = ({ sales, onShowSaleModal, onShowBarcodeScanner, onShowSale
                                             {sale.tipo === 'RESTOCK' ? 'Restock' : (sale.tipo === 'PAGO' ? 'Pago' : 'Venta')}
                                         </Text>
                                     </View>
-                                    {sale.metodoPago?.toUpperCase() === 'FIADO' && (
+                                    {(sale.metodoPago?.toUpperCase() === 'FIADO' || sale.metodo_pago?.toUpperCase() === 'FIADO') && (
                                         <View style={{
                                             paddingHorizontal: 6,
                                             paddingVertical: 1,

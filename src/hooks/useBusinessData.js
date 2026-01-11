@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { productosAPI, ventasAPI, clientesAPI, movimientosStockAPI } from "../services/api"
+import { productosAPI, ventasAPI, clientesAPI, movimientosStockAPI, setMode, getMode, initService } from "../services/factory"
 import { Alert } from "react-native"
 
 export const useBusinessData = () => {
@@ -13,14 +13,41 @@ export const useBusinessData = () => {
     const [restockCart, setRestockCart] = useState([])
     const [movements, setMovements] = useState([])
 
+    const [appMode, setAppMode] = useState('OFFLINE')
+
     useEffect(() => {
-        fetchData()
+        const init = async () => {
+            try {
+                await initService()
+                setAppMode(getMode())
+                await fetchData()
+            } catch (e) {
+                console.error("Initialization error:", e)
+            }
+        }
+        init()
     }, [])
+
+    const toggleAppMode = async () => {
+        const newMode = appMode === 'ONLINE' ? 'OFFLINE' : 'ONLINE'
+        await setMode(newMode)
+        setAppMode(newMode)
+        await fetchData()
+        Alert.alert("Modo cambiado", `Ahora estás en modo: ${newMode}`)
+    }
 
     const fetchData = async () => {
         setLoading(true)
-        await Promise.all([fetchProducts(), fetchSales(), fetchClients(), fetchMovements()])
-        setLoading(false)
+        try {
+            await fetchProducts()
+            await fetchSales()
+            await fetchClients()
+            await fetchMovements()
+        } catch (e) {
+            console.error("Fetch data error:", e)
+        } finally {
+            setLoading(false)
+        }
     }
 
     const fetchSales = async () => {
@@ -34,15 +61,12 @@ export const useBusinessData = () => {
 
     const fetchProducts = async () => {
         try {
-            setLoading(true)
             setError(null)
             const data = await productosAPI.getAll()
             setProducts(data)
         } catch (err) {
             setError(err.message)
             console.error("Error al cargar productos:", err.message)
-        } finally {
-            setLoading(false)
         }
     }
 
@@ -448,6 +472,8 @@ export const useBusinessData = () => {
         handleUpdateClient,
         handleRegistrarPago,
         movements,
-        fetchMovements
+        fetchMovements,
+        appMode,
+        toggleAppMode
     }
 }

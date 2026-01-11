@@ -1,9 +1,18 @@
-import React, { useState } from "react"
-import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from "react-native"
+import React, { useState, useCallback } from "react"
+import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl } from "react-native"
 import { Ionicons, Feather } from '@expo/vector-icons'
 
 export const Debtors = ({ clients, sales, onRegistrarPago, onShowSaleDetails, onShowClientModal, onRefresh, onShowToast, loading }) => {
     const [searchTerm, setSearchTerm] = useState("")
+    const [refreshing, setRefreshing] = useState(false)
+
+    const handleRefresh = useCallback(async () => {
+        setRefreshing(true)
+        if (onRefresh) {
+            await onRefresh()
+        }
+        setRefreshing(false)
+    }, [onRefresh])
 
     const debtors = clients.filter(c =>
         c.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -60,7 +69,12 @@ export const Debtors = ({ clients, sales, onRegistrarPago, onShowSaleDetails, on
                     </View>
                 </View>
 
-                <ScrollView style={{ flex: 1, padding: 16 }}>
+                <ScrollView
+                    style={{ flex: 1, padding: 16 }}
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#2563EB']} />
+                    }
+                >
                     <TouchableOpacity
                         style={{ backgroundColor: '#10B981', padding: 16, borderRadius: 12, alignItems: 'center', marginBottom: 24, flexDirection: 'row', justifyContent: 'center', gap: 8 }}
                         onPress={() => {
@@ -144,7 +158,12 @@ export const Debtors = ({ clients, sales, onRegistrarPago, onShowSaleDetails, on
                         <ActivityIndicator size="large" color="#2563EB" />
                     </View>
                 ) : (
-                    <ScrollView style={{ flex: 1, padding: 16 }}>
+                    <ScrollView
+                        style={{ flex: 1, padding: 16 }}
+                        refreshControl={
+                            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#2563EB']} />
+                        }
+                    >
                         {debtors.length === 0 ? (
                             <View style={{ alignItems: 'center', padding: 40 }}>
                                 <Ionicons name="people-outline" size={64} color="#D1D5DB" />
