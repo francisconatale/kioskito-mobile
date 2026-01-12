@@ -1,16 +1,28 @@
+import AsyncStorage from '@react-native-async-storage/async-storage'
+
 const API_BASE_URL = 'https://kioskito-api-1.onrender.com/api'
 
 // Generic API request handler
 export const apiRequest = async (endpoint, options = {}) => {
     try {
+        // Get auth token from AsyncStorage
+        const token = await AsyncStorage.getItem('auth_token')
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+            ...options.headers,
+        }
+
+        // Add Authorization header if token exists
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`
+        }
+
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-            headers: {
-                'Content-Type': 'application/json',
-                'Cache-Control': 'no-cache',
-                'Pragma': 'no-cache',
-                'Expires': '0',
-                ...options.headers,
-            },
+            headers,
             ...options,
         })
 

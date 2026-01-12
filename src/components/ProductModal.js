@@ -159,7 +159,6 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onUpdateProduct, 
                             onSecondaryAction={handleClose}
                         />
                     ) : step === 'stock' ? (
-                        /* Stock Update View */
                         <View>
                             <Text style={{ fontSize: 15, color: '#374151', marginBottom: 20, textAlign: 'center', lineHeight: 22 }}>
                                 Ingresa la cantidad de unidades disponibles actualmente para <Text style={{ fontWeight: '700' }}>{savedProduct?.nombre}</Text>.
@@ -224,7 +223,6 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onUpdateProduct, 
                             </View>
                         </View>
                     ) : (
-                        /* Standard Form View */
                         <ScrollView showsVerticalScrollIndicator={false}>
                             {successMessage && (
                                 <View style={{

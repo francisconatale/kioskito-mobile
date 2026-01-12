@@ -50,10 +50,18 @@ export const AuthProvider = ({ children }) => {
 
     const register = async (userData) => {
         try {
-            await apiRequest('/auth/register', {
+            const response = await apiRequest('/auth/register', {
                 method: 'POST',
                 body: JSON.stringify(userData)
             });
+
+            // Auto-login after registration
+            if (response.token && response.user) {
+                await AsyncStorage.setItem('user_session', JSON.stringify(response.user));
+                await AsyncStorage.setItem('auth_token', response.token);
+                setUser(response.user);
+            }
+
             return { success: true, message: 'Usuario registrado correctamente' };
         } catch (error) {
             return { success: false, message: error.message || 'Error al registrar usuario' };
