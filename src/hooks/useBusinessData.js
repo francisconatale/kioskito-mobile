@@ -113,9 +113,9 @@ export const useBusinessData = () => {
                 marca: newProduct.marca || null,
             }
 
-            await productosAPI.create(producto)
+            const createdProduct = await productosAPI.create(producto)
             await fetchProducts()
-            return { success: true, message: "Producto agregado correctamente" }
+            return { success: true, message: "Producto agregado correctamente", product: createdProduct }
         } catch (err) {
             return { success: false, message: `No se pudo agregar el producto: ${err.message}` }
         }

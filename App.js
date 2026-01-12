@@ -176,9 +176,9 @@ const MainApp = () => {
     setConfirmDialog({ visible: false, productId: null })
   }
 
-  const handleAddProductWrapper = async (product) => {
+  const handleAddProductWrapper = async (product, showSuccessToast = true) => {
     const result = await handleAddProduct(product)
-    if (result.success) {
+    if (result.success && showSuccessToast) {
       showToast(result.message, "success")
     }
     return result
@@ -186,9 +186,10 @@ const MainApp = () => {
 
   const handleUpdateProductWrapper = async (id, product) => {
     const result = await handleUpdateProduct(id, product)
-    if (result.success) {
-      showToast(result.message, "success")
-    }
+    // Toast suppressed for update to be cleaner
+    // if (result.success) {
+    //   showToast(result.message, "success")
+    // }
     return result
   }
 

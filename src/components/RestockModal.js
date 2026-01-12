@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal, ActivityIndicator } from "react-native"
 import { Ionicons, Feather } from '@expo/vector-icons'
+import { SuccessScreen } from './SuccessScreen'
 
 export const RestockModal = ({
     visible,
@@ -209,29 +210,14 @@ export const RestockModal = ({
                                 )}
                             </>
                         ) : (
-                            <View style={{ alignItems: 'center', paddingVertical: 20 }}>
-                                <View style={{ width: 72, height: 72, backgroundColor: '#DCFCE7', borderRadius: 36, alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
-                                    <Ionicons name="checkmark" size={40} color="#16A34A" />
-                                </View>
-                                <Text style={{ fontSize: 20, fontWeight: '700', color: '#111827', marginBottom: 8, fontFamily: 'System' }}>¡Restock Exitoso!</Text>
-                                <Text style={{ fontSize: 14, color: '#6B7280', marginBottom: 24, textAlign: 'center', fontFamily: 'System' }}>
-                                    El stock de los productos ha sido actualizado correctamente.
-                                </Text>
-                                <View style={{ width: '100%', gap: 10 }}>
-                                    <TouchableOpacity
-                                        style={{ backgroundColor: '#2563EB', padding: 14, borderRadius: 12, alignItems: 'center' }}
-                                        onPress={startNewRestock}
-                                    >
-                                        <Text style={{ color: 'white', fontWeight: '600', fontSize: 15, fontFamily: 'System' }}>Nuevo Restock</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={{ backgroundColor: 'white', padding: 14, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: '#E5E7EB' }}
-                                        onPress={handleClose}
-                                    >
-                                        <Text style={{ color: '#374151', fontWeight: '600', fontSize: 15, fontFamily: 'System' }}>Cerrar</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
+                            <SuccessScreen
+                                title="¡Restock Exitoso!"
+                                message="El stock de los productos ha sido actualizado correctamente."
+                                primaryButtonText="Nuevo Restock"
+                                onPrimaryAction={startNewRestock}
+                                secondaryButtonText="Cerrar"
+                                onSecondaryAction={handleClose}
+                            />
                         )}
                     </ScrollView>
                 </View>
