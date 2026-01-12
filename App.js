@@ -19,9 +19,15 @@ import { useBusinessData } from "./src/hooks/useBusinessData"
 
 import { ErrorBoundary } from "./src/components/ErrorBoundary"
 import { Menu } from "./src/components/Menu"
+import { AuthProvider, useAuth } from "./src/contexts/AuthContext"
+import LoginScreen from "./src/components/LoginScreen"
 
-const MainApp = () => {
+const MainAppContent = () => {
+  const { user, loading: authLoading } = useAuth()
   const [activeTab, setActiveTab] = useState("dashboard")
+
+  if (authLoading) return null; // Or a splash/loader
+  if (!user) return <LoginScreen />
 
   const [showProductModal, setShowProductModal] = useState(false)
   const [showSaleModal, setShowSaleModal] = useState(false)
@@ -37,7 +43,6 @@ const MainApp = () => {
   const [selectedSale, setSelectedSale] = useState(null)
   const [toast, setToast] = useState({ visible: false, message: "", type: "success" })
 
-  // Splash Screen State
   useEffect(() => {
     const prepare = async () => {
       try {
@@ -85,7 +90,7 @@ const MainApp = () => {
     movements,
     appMode,
     toggleAppMode
-  } = useBusinessData()
+  } = useBusinessData(user)
 
   const handleShowProductModal = (product = null) => {
     setSelectedProduct(product)
@@ -384,6 +389,12 @@ const MainApp = () => {
     </SafeAreaView>
   )
 }
+
+const MainApp = () => (
+  <AuthProvider>
+    <MainAppContent />
+  </AuthProvider>
+)
 
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 

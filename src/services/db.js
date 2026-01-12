@@ -45,6 +45,8 @@ export const initDB = async () => {
     try {
         await database.execAsync(`
 
+
+
             CREATE TABLE IF NOT EXISTS clientes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 nombre TEXT NOT NULL,
@@ -69,6 +71,7 @@ export const initDB = async () => {
                 monto_total REAL NOT NULL,
                 metodo_pago TEXT NOT NULL,
                 cliente_id INTEGER,
+                cliente_id INTEGER,
                 tipo TEXT DEFAULT 'VENTA',
                 FOREIGN KEY (cliente_id) REFERENCES clientes(id)
             );
@@ -87,8 +90,6 @@ export const initDB = async () => {
             CREATE TABLE IF NOT EXISTS movimientos_stock (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 producto_id INTEGER NOT NULL,
-                tipo TEXT NOT NULL,
-                cantidad INTEGER NOT NULL,
                 motivo TEXT,
                 fecha TEXT NOT NULL,
                 FOREIGN KEY (producto_id) REFERENCES productos(id)

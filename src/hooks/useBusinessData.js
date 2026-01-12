@@ -2,9 +2,10 @@ import { useState, useEffect } from "react"
 import { productosAPI, ventasAPI, clientesAPI, movimientosStockAPI, setMode, getMode, initService } from "../services/factory"
 import { Alert } from "react-native"
 
-export const useBusinessData = () => {
+export const useBusinessData = (user) => {
     const [products, setProducts] = useState([])
     const [sales, setSales] = useState([])
+
     const [clients, setClients] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
@@ -312,6 +313,7 @@ export const useBusinessData = () => {
                 montoTotal: subtotal,
                 metodoPago: metodoPago,
                 clienteId: clienteId,
+                usuarioId: user?.id, // Use the user passed to the hook
                 tipo: 'VENTA',
                 detalles: saleCart.map(item => ({
                     productoId: item.productId,
