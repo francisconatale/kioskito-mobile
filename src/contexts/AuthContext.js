@@ -28,19 +28,12 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (username, password) => {
         try {
-            // "Login must always be online"
-            // We assume there's an endpoint /auth/login that returns the user object and maybe a token
-            // Since we don't have the backend code, we mock the call structure or use the generic apiRequest
-
             const response = await apiRequest('/auth/login', {
                 method: 'POST',
                 body: JSON.stringify({ username, password })
             });
 
-            // Assuming response has { token, user: { id, username, rol, ... } }
-            // Or just the user object
-
-            const userData = response.user || response; // Adapt based on actual API
+            const userData = response.user || response;
 
             await AsyncStorage.setItem('user_session', JSON.stringify(userData));
             if (response.token) {
@@ -55,6 +48,18 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const register = async (userData) => {
+        try {
+            await apiRequest('/auth/register', {
+                method: 'POST',
+                body: JSON.stringify(userData)
+            });
+            return { success: true, message: 'Usuario registrado correctamente' };
+        } catch (error) {
+            return { success: false, message: error.message || 'Error al registrar usuario' };
+        }
+    };
+
     const logout = async () => {
         try {
             await AsyncStorage.removeItem('user_session');
@@ -66,7 +71,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, login, logout }}>
+        <AuthContext.Provider value={{ user, loading, login, logout, register }}>
             {children}
         </AuthContext.Provider>
     );
