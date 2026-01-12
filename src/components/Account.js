@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { apiRequest } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
 export const Account = ({ onLogout, onBack }) => {
-    const { user, loading } = useAuth();
+    const { user, loading, setUser } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
     const [nombre, setNombre] = useState(user?.nombre || '');
     const [email, setEmail] = useState(user?.email || '');
@@ -25,10 +26,27 @@ export const Account = ({ onLogout, onBack }) => {
 
         setSaveLoading(true);
         try {
-            Alert.alert("Info", "La actualización de perfil requiere cambios adicionales en el servidor.");
-            setIsEditing(false);
+            const response = await apiRequest('/auth/update-profile', {
+                method: 'POST',
+                body: JSON.stringify({
+                    username: user.username,
+                    nombre,
+                    email
+                })
+            });
+
+            if (response.success) {
+                const updatedUser = response.user;
+                setUser(updatedUser);
+                await AsyncStorage.setItem('user_session', JSON.stringify(updatedUser)); // Persist locally!
+
+                Alert.alert("Éxito", "Perfil actualizado correctamente");
+                setIsEditing(false);
+            } else {
+                Alert.alert("Error", response.message || "No se pudo actualizar el perfil");
+            }
         } catch (e) {
-            Alert.alert("Error", e.message);
+            Alert.alert("Error", e.message || "Error al conectar con el servidor");
         } finally {
             setSaveLoading(false);
         }
