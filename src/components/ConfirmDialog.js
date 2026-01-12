@@ -1,6 +1,6 @@
 import { Modal, View, Text, TouchableOpacity, ActivityIndicator } from "react-native"
 
-export const ConfirmDialog = ({ visible, title, message, onConfirm, onCancel, loading }) => {
+export const ConfirmDialog = ({ visible, title, message, onConfirm, onCancel, loading, confirmText = 'Eliminar', confirmColor = '#ef4444' }) => {
     return (
         <Modal
             visible={visible}
@@ -65,7 +65,7 @@ export const ConfirmDialog = ({ visible, title, message, onConfirm, onCancel, lo
                         <TouchableOpacity
                             style={{
                                 flex: 1,
-                                backgroundColor: loading ? '#fca5a5' : '#ef4444',
+                                backgroundColor: loading ? '#fca5a5' : confirmColor,
                                 padding: 12,
                                 borderRadius: 8,
                                 alignItems: 'center',
@@ -86,7 +86,7 @@ export const ConfirmDialog = ({ visible, title, message, onConfirm, onCancel, lo
                                 fontWeight: '600',
                                 fontSize: 16
                             }}>
-                                {loading ? 'Eliminando...' : 'Eliminar'}
+                                {loading ? 'Procesando...' : confirmText}
                             </Text>
                         </TouchableOpacity>
                     </View>

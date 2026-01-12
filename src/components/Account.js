@@ -4,6 +4,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { apiRequest } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { ConfirmDialog } from './ConfirmDialog';
+import { SuccessScreen } from './SuccessScreen';
+import { Modal } from 'react-native';
 
 export const Account = ({ onLogout, onBack }) => {
     const { user, loading, setUser } = useAuth();
@@ -11,8 +14,9 @@ export const Account = ({ onLogout, onBack }) => {
     const [nombre, setNombre] = useState(user?.nombre || '');
     const [email, setEmail] = useState(user?.email || '');
     const [saveLoading, setSaveLoading] = useState(false);
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-    // Password Change State
+    const [resultModal, setResultModal] = useState({ visible: false, title: '', message: '', type: 'success' }); // type: success | error
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
@@ -40,13 +44,28 @@ export const Account = ({ onLogout, onBack }) => {
                 setUser(updatedUser);
                 await AsyncStorage.setItem('user_session', JSON.stringify(updatedUser)); // Persist locally!
 
-                Alert.alert("Éxito", "Perfil actualizado correctamente");
+                setResultModal({
+                    visible: true,
+                    title: "Perfil Actualizado",
+                    message: "Tus datos han sido guardados correctamente.",
+                    type: "success"
+                });
                 setIsEditing(false);
             } else {
-                Alert.alert("Error", response.message || "No se pudo actualizar el perfil");
+                setResultModal({
+                    visible: true,
+                    title: "Error",
+                    message: response.message || "No se pudo actualizar el perfil",
+                    type: "error"
+                });
             }
         } catch (e) {
-            Alert.alert("Error", e.message || "Error al conectar con el servidor");
+            setResultModal({
+                visible: true,
+                title: "Error de Conexión",
+                message: e.message || "Error al conectar con el servidor",
+                type: "error"
+            });
         } finally {
             setSaveLoading(false);
         }
@@ -70,15 +89,30 @@ export const Account = ({ onLogout, onBack }) => {
             });
 
             if (response.success) {
-                Alert.alert("Éxito", "Contraseña actualizada correctamente");
+                setResultModal({
+                    visible: true,
+                    title: "Contraseña Actualizada",
+                    message: "Tu contraseña ha sido cambiada correctamente.",
+                    type: "success"
+                });
                 setShowPasswordModal(false);
                 setCurrentPassword('');
                 setNewPassword('');
             } else {
-                Alert.alert("Error", response.message || "No se pudo actualizar la contraseña");
+                setResultModal({
+                    visible: true,
+                    title: "Error",
+                    message: response.message || "No se pudo actualizar la contraseña",
+                    type: "error"
+                });
             }
         } catch (e) {
-            Alert.alert("Error", e.message || "Error al conectar con el servidor");
+            setResultModal({
+                visible: true,
+                title: "Error",
+                message: e.message || "Error al conectar con el servidor",
+                type: "error"
+            });
         } finally {
             setPasswordLoading(false);
         }
@@ -192,19 +226,13 @@ export const Account = ({ onLogout, onBack }) => {
 
                 <TouchableOpacity
                     style={[styles.button, styles.logoutFullButton]}
-                    onPress={() => {
-                        Alert.alert("Cerrar Sesión", "¿Estás seguro que deseas salir?", [
-                            { text: "Cancelar", style: "cancel" },
-                            { text: "Salir", style: "destructive", onPress: onLogout }
-                        ]);
-                    }}
+                    onPress={() => setShowLogoutConfirm(true)}
                 >
                     <Text style={styles.logoutFullButtonText}>Cerrar Sesión</Text>
                 </TouchableOpacity>
 
             </ScrollView>
 
-            {/* Password Modal */}
             {showPasswordModal && (
                 <View style={{
                     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
@@ -261,6 +289,43 @@ export const Account = ({ onLogout, onBack }) => {
                     </View>
                 </View>
             )}
+
+            <ConfirmDialog
+                visible={showLogoutConfirm}
+                title="Cerrar Sesión"
+                message="¿Estás seguro que deseas salir?"
+                confirmText="Salir"
+                onConfirm={onLogout}
+                onCancel={() => setShowLogoutConfirm(false)}
+            />
+
+            {/* Generic Result Modal */}
+            <Modal
+                visible={resultModal.visible}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setResultModal({ ...resultModal, visible: false })}
+            >
+                <View style={{
+                    flex: 1, backgroundColor: 'rgba(0,0,0,0.5)',
+                    justifyContent: 'center', alignItems: 'center', padding: 20
+                }}>
+                    <View style={{
+                        backgroundColor: 'white', borderRadius: 20, padding: 24,
+                        width: '100%', maxWidth: 400
+                    }}>
+                        <SuccessScreen
+                            title={resultModal.title}
+                            message={resultModal.message}
+                            primaryButtonText="Aceptar"
+                            onPrimaryAction={() => setResultModal({ ...resultModal, visible: false })}
+                            icon={resultModal.type === 'success' ? 'checkmark' : 'alert-circle'}
+                            iconColor={resultModal.type === 'success' ? '#16A34A' : '#DC2626'} // Green or Red
+                            iconBgColor={resultModal.type === 'success' ? '#DCFCE7' : '#FEE2E2'} // Light Green or Light Red
+                        />
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 };

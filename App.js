@@ -373,20 +373,20 @@ const MainAppContent = () => {
 }
 
 const MainApp = () => (
-  <AuthProvider>
-    <MainAppContent />
-  </AuthProvider>
+  <SafeAreaProvider>
+    <AuthProvider>
+      <MainAppContent />
+    </AuthProvider>
+  </SafeAreaProvider>
 )
 
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const App = () => {
   return (
-    <SafeAreaProvider>
-      <ErrorBoundary>
-        <MainApp />
-      </ErrorBoundary>
-    </SafeAreaProvider>
+    <ErrorBoundary>
+      <MainApp />
+    </ErrorBoundary>
   )
 }
 
