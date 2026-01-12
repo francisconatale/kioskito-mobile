@@ -1,7 +1,7 @@
 const API_BASE_URL = 'https://kioskito-api-1.onrender.com/api'
 
 // Generic API request handler
-const apiRequest = async (endpoint, options = {}) => {
+export const apiRequest = async (endpoint, options = {}) => {
     try {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
             headers: {
@@ -50,7 +50,6 @@ const mapProductoFromBackend = (producto) => {
     }
 }
 
-// Map backend venta format to frontend format
 const mapVentaFromBackend = (venta) => {
     if (!venta) return null
 

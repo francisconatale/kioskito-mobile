@@ -2,7 +2,7 @@ import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert } from "rea
 import { Ionicons } from '@expo/vector-icons'
 import { exportData, importData } from '../services/backup'
 
-export const Menu = ({ onNavigate, appMode, onRefresh, onToggleMode }) => {
+export const Menu = ({ onNavigate, appMode, onRefresh, onToggleMode, user, onLogout }) => {
 
     const handleBackup = async () => {
         if (appMode === 'ONLINE') {
@@ -52,6 +52,13 @@ export const Menu = ({ onNavigate, appMode, onRefresh, onToggleMode }) => {
 
     // Menu items configuration
     const menuItems = [
+        {
+            id: 'account',
+            label: 'Mi Cuenta',
+            subtitle: 'Editar perfil y cerrar sesión',
+            icon: 'person-circle-outline',
+            color: '#8B5CF6' // Violet
+        },
         {
             id: 'debtors',
             label: 'Deudores',
@@ -125,6 +132,8 @@ export const Menu = ({ onNavigate, appMode, onRefresh, onToggleMode }) => {
                 ))}
             </View>
 
+            {/* Account section removed, moved to dedicated menu item */}
+
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Sistema y Seguridad</Text>
                 {settingsItems.map((item) => (
@@ -140,7 +149,6 @@ export const Menu = ({ onNavigate, appMode, onRefresh, onToggleMode }) => {
                             <Text style={styles.itemTitle}>{item.label}</Text>
                             <Text style={styles.itemSubtitle}>{item.subtitle}</Text>
                         </View>
-                        {/* No chevron for actions usually, or different icon */}
                     </TouchableOpacity>
                 ))}
             </View>
@@ -207,6 +215,61 @@ const styles = StyleSheet.create({
     },
     itemSubtitle: {
         fontSize: 12,
+        color: '#6B7280'
+    },
+    accountCard: {
+        backgroundColor: 'white',
+        borderRadius: 16,
+        padding: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3.84,
+        elevation: 5,
+        marginBottom: 8
+    },
+    avatarContainer: {
+        marginRight: 16
+    },
+    avatar: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: '#EFF6FF',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: '#BFDBFE'
+    },
+    avatarText: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#2563EB'
+    },
+    userInfo: {
+        flex: 1
+    },
+    userName: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#111827',
+        marginBottom: 4
+    },
+    userRole: {
+        fontSize: 14,
+        color: '#2563EB',
+        fontWeight: '600',
+        marginBottom: 2,
+        backgroundColor: '#EFF6FF',
+        alignSelf: 'flex-start',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 4
+    },
+    userEmail: {
+        fontSize: 14,
         color: '#6B7280'
     }
 })

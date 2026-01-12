@@ -21,13 +21,11 @@ import { ErrorBoundary } from "./src/components/ErrorBoundary"
 import { Menu } from "./src/components/Menu"
 import { AuthProvider, useAuth } from "./src/contexts/AuthContext"
 import LoginScreen from "./src/components/LoginScreen"
+import { Account } from "./src/components/Account"
 
 const MainAppContent = () => {
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading, logout } = useAuth()
   const [activeTab, setActiveTab] = useState("dashboard")
-
-  if (authLoading) return null; // Or a splash/loader
-  if (!user) return <LoginScreen />
 
   const [showProductModal, setShowProductModal] = useState(false)
   const [showSaleModal, setShowSaleModal] = useState(false)
@@ -42,22 +40,6 @@ const MainAppContent = () => {
   const [selectedClient, setSelectedClient] = useState(null)
   const [selectedSale, setSelectedSale] = useState(null)
   const [toast, setToast] = useState({ visible: false, message: "", type: "success" })
-
-  useEffect(() => {
-    const prepare = async () => {
-      try {
-        // Prevent auto hide
-        await SplashScreen.preventAutoHideAsync()
-      } catch (e) {
-        console.warn(e)
-      } finally {
-        // Hide splash screen
-        await SplashScreen.hideAsync()
-      }
-    }
-
-    prepare()
-  }, [])
 
   const {
     products,
@@ -92,6 +74,20 @@ const MainAppContent = () => {
     toggleAppMode
   } = useBusinessData(user)
 
+  useEffect(() => {
+    const prepare = async () => {
+      try {
+        await SplashScreen.preventAutoHideAsync()
+      } catch (e) {
+        console.warn(e)
+      } finally {
+        await SplashScreen.hideAsync()
+      }
+    }
+    prepare()
+  }, [])
+
+  // Logic handlers...
   const handleShowProductModal = (product = null) => {
     setSelectedProduct(product)
     setShowProductModal(true)
@@ -114,39 +110,19 @@ const MainAppContent = () => {
   }
 
   const handleBarcodeScan = (scannedCode) => {
-    // If a callback is provided (e.g. from ProductModal or specific flow), use it
     if (barcodeCallback) {
       barcodeCallback(scannedCode)
       return
     }
 
-    // Otherwise use default mode logic
     if (scanMode === "product") {
-      // Search if product exists to edit, otherwise open new
       const product = products.find(p => p.codigoBarras === scannedCode)
       handleShowProductModal(product || { codigoBarras: scannedCode })
     } else if (scanMode === "sale") {
       addProductToCartByBarcode(scannedCode)
     } else if (scanMode === "restock") {
-      // In restock mode, scanning a product adds it to the restock cart (single unit)
-      // First find the product
       const product = products.find(p => p.codigoBarras === scannedCode)
       if (product) {
-        // Find if already in cart to increment?? The RestockModal handles internal state for "New Item".
-        // BUT, RestockModal pass onShowBarcodeScanner('restock').
-        // The RestockModal is open. But scanning happens in BarcodeScanner (which overlays).
-        // If we want to add to the "new item" field in RestockModal, we need a callback.
-        // Wait, RestockModal calls: onShowBarcodeScanner('restock') - it doesn't pass a callback.
-        // So we need to handle it here OR change RestockModal to pass a callback.
-        // Changing RestockModal to pass a callback is cleaner and consistent with ProductModal.
-        // BUT, if I change RestockModal to pass a callback, the "barcodeCallback" check at top will handle it.
-        // So I don't strictly *need* a "restock" block here IF I update RestockModal.
-        // However, having a fallback or explicit handler is good.
-
-        // Let's defer to the UpdateRestockModal step to pass the callback.
-        // But if I want "background" scanning support (without explicit callback), I'd do it here.
-        // For now, let's assume we will pass a callback from RestockModal.
-        // I will add the block just in case, attempting to add to restock cart directly if possible.
         handleAddToRestockCart(product.id, "1")
         showToast(`Agregado: ${product.nombre}`, "success")
       } else {
@@ -191,15 +167,14 @@ const MainAppContent = () => {
 
   const handleUpdateProductWrapper = async (id, product) => {
     const result = await handleUpdateProduct(id, product)
-    // Toast suppressed for update to be cleaner
-    // if (result.success) {
-    //   showToast(result.message, "success")
-    // }
     return result
   }
 
-  return (
+  // CONDITIONAL RENDER AFTER ALL HOOKS
+  if (authLoading) return null; // Or a splash/loader
+  if (!user) return <LoginScreen />
 
+  return (
     <SafeAreaView style={{
       flex: 1,
       backgroundColor: '#F9FAFB',
@@ -269,6 +244,7 @@ const MainAppContent = () => {
             onRefresh={fetchClients}
             onShowToast={showToast}
             loading={loading}
+            onBack={() => setActiveTab("menu")}
           />
         )}
         {activeTab === "analytics" && (
@@ -277,6 +253,7 @@ const MainAppContent = () => {
             sales={sales}
             clients={clients}
             onRefresh={fetchData}
+            onBack={() => setActiveTab("menu")}
           />
         )}
         {activeTab === "menu" && (
@@ -285,7 +262,12 @@ const MainAppContent = () => {
             appMode={appMode}
             onToggleMode={toggleAppMode}
             onRefresh={fetchData}
+            user={user}
+            onLogout={logout}
           />
+        )}
+        {activeTab === "account" && (
+          <Account onLogout={logout} onBack={() => setActiveTab("menu")} />
         )}
 
         <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />

@@ -2,7 +2,7 @@ import React, { useState, useCallback } from "react"
 import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl } from "react-native"
 import { Ionicons, Feather } from '@expo/vector-icons'
 
-export const Debtors = ({ clients, sales, onRegistrarPago, onShowSaleDetails, onShowClientModal, onRefresh, onShowToast, loading }) => {
+export const Debtors = ({ clients, sales, onRegistrarPago, onShowSaleDetails, onShowClientModal, onRefresh, onShowToast, loading, onBack }) => {
     const [searchTerm, setSearchTerm] = useState("")
     const [refreshing, setRefreshing] = useState(false)
 
@@ -123,9 +123,17 @@ export const Debtors = ({ clients, sales, onRegistrarPago, onShowSaleDetails, on
     const renderListView = () => {
         return (
             <View style={{ flex: 1 }}>
-                <View style={{ padding: 20, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#E5E7EB' }}>
+                {onBack && (
+                    <View style={{ paddingTop: 16, paddingHorizontal: 16, paddingBottom: 0, backgroundColor: '#F9FAFB' }}>
+                        <TouchableOpacity onPress={onBack} style={{ flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', marginLeft: -8, padding: 8 }}>
+                            <Ionicons name="arrow-back" size={24} color="#111827" />
+                            {/* <Text style={{marginLeft: 4, fontWeight: '600', color: '#111827', fontSize: 16}}>Volver</Text> */}
+                        </TouchableOpacity>
+                    </View>
+                )}
+                <View style={{ padding: 20, paddingTop: onBack ? 8 : 20, backgroundColor: '#F9FAFB' }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                        <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#111827' }}>Deudores</Text>
+                        <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#111827' }}>Deudores</Text>
                         <TouchableOpacity
                             style={{
                                 backgroundColor: '#2563EB',
@@ -142,7 +150,7 @@ export const Debtors = ({ clients, sales, onRegistrarPago, onShowSaleDetails, on
                             <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13 }}>Alta Cliente</Text>
                         </TouchableOpacity>
                     </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', borderRadius: 12, paddingHorizontal: 16 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', borderRadius: 12, paddingHorizontal: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 }}>
                         <Ionicons name="search" size={20} color="#9CA3AF" />
                         <TextInput
                             style={{ flex: 1, paddingVertical: 12, paddingHorizontal: 12, fontSize: 16 }}

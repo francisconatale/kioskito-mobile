@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react"
-import { View, Text, ScrollView, RefreshControl } from "react-native"
+import { View, Text, ScrollView, RefreshControl, TouchableOpacity } from "react-native"
 import { Ionicons } from '@expo/vector-icons'
 import {
     calculateTotalSalesMonth,
@@ -11,7 +11,7 @@ import {
     countLowStockProducts
 } from '../utils/calculations'
 
-export const Analytics = ({ products, sales, clients, onRefresh }) => {
+export const Analytics = ({ products, sales, clients, onRefresh, onBack }) => {
     const [refreshing, setRefreshing] = useState(false)
 
     const handleRefresh = useCallback(async () => {
@@ -37,11 +37,20 @@ export const Analytics = ({ products, sales, clients, onRefresh }) => {
                 <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#2563EB']} />
             }
         >
-            <View style={{ backgroundColor: 'white', padding: 16, borderRadius: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2, marginBottom: 16 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+            <View style={{ marginBottom: 16 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    {onBack && (
+                        <TouchableOpacity onPress={onBack} style={{ marginRight: 8, padding: 8, marginLeft: -8 }}>
+                            <Ionicons name="arrow-back" size={24} color="#111827" />
+                        </TouchableOpacity>
+                    )}
                     <Ionicons name="bar-chart-outline" size={24} color="#3b82f6" />
-                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#111827', marginLeft: 8 }}>Análisis de Caja</Text>
+                    <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#111827', marginLeft: 8 }}>Estadísticas</Text>
                 </View>
+            </View>
+
+            <View style={{ backgroundColor: 'white', padding: 16, borderRadius: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2, marginBottom: 16 }}>
+                <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#111827', marginBottom: 16 }}>Análisis de Caja</Text>
 
                 <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
                     <View style={{ flex: 1, backgroundColor: '#fef3c7', padding: 12, borderRadius: 8 }}>
