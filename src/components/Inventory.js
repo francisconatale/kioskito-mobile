@@ -1,11 +1,9 @@
 import { useState, useCallback } from "react"
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, RefreshControl } from "react-native"
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, RefreshControl, StyleSheet } from "react-native"
 import { Ionicons, Feather } from '@expo/vector-icons'
-import { getInventoryMovements } from '../utils/calculations'
 
 export const Inventory = ({
     products,
-    sales,
     movements,
     loading,
     onShowProductModal,
@@ -36,185 +34,401 @@ export const Inventory = ({
     )
 
     const renderHeader = () => (
-        <View style={{ backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#E5E7EB' }}>
-            <View style={{ padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#111827' }}>Inventario</Text>
-                <View style={{ flexDirection: 'row', gap: 8 }}>
-                    <TouchableOpacity
-                        style={{ backgroundColor: 'white', paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#E5E7EB' }}
-                        onPress={onShowBarcodeScanner}
-                    >
-                        <Ionicons name="barcode-outline" size={18} color="#2563EB" />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={{ backgroundColor: '#10B981', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, flexDirection: 'row', alignItems: 'center' }}
-                        onPress={onShowRestockModal}
-                    >
-                        <Ionicons name="add-circle-outline" size={18} color="#fff" />
-                        <Text style={{ color: 'white', fontWeight: '600', marginLeft: 4, fontSize: 13 }}>Ingresar</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={{ backgroundColor: '#2563EB', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, flexDirection: 'row', alignItems: 'center' }}
-                        onPress={onShowProductModal}
-                    >
-                        <Ionicons name="add" size={18} color="#fff" />
-                        <Text style={{ color: 'white', fontWeight: '600', marginLeft: 4, fontSize: 13 }}>Nuevo</Text>
-                    </TouchableOpacity>
-                </View>
+        <View style={styles.headerContainer}>
+            <View style={styles.headerTop}>
+                <Text style={styles.headerTitle}>Inventario</Text>
+                <TouchableOpacity style={styles.barcodeBtn} onPress={onShowBarcodeScanner}>
+                    <Ionicons name="barcode-outline" size={22} color="#4F46E5" />
+                </TouchableOpacity>
             </View>
 
-            <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 12 }}>
+            <View style={styles.searchBarContainer}>
+                <Feather name="search" size={18} color="#9CA3AF" />
+                <TextInput
+                    style={styles.searchInput}
+                    placeholder={activeTab === 'list' ? "Buscar por nombre o marca..." : "Buscar movimientos..."}
+                    placeholderTextColor="#9CA3AF"
+                    value={searchTerm}
+                    onChangeText={setSearchTerm}
+                />
+                {searchTerm !== "" && (
+                    <TouchableOpacity onPress={() => setSearchTerm("")}>
+                        <Ionicons name="close-circle" size={18} color="#D1D5DB" />
+                    </TouchableOpacity>
+                )}
+            </View>
+
+            <View style={styles.tabContainer}>
                 <TouchableOpacity
                     onPress={() => setActiveTab("list")}
-                    style={{
-                        flex: 1,
-                        paddingVertical: 8,
-                        borderBottomWidth: 2,
-                        borderBottomColor: activeTab === 'list' ? '#2563EB' : 'transparent',
-                        alignItems: 'center'
-                    }}
+                    style={[styles.tab, activeTab === 'list' && styles.activeTab]}
                 >
-                    <Text style={{ fontWeight: activeTab === 'list' ? 'bold' : '500', color: activeTab === 'list' ? '#2563EB' : '#6B7280' }}>Lista Stock</Text>
+                    <Text style={[styles.tabText, activeTab === 'list' && styles.activeTabText]}>Lista</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     onPress={() => setActiveTab("movements")}
-                    style={{
-                        flex: 1,
-                        paddingVertical: 8,
-                        borderBottomWidth: 2,
-                        borderBottomColor: activeTab === 'movements' ? '#2563EB' : 'transparent',
-                        alignItems: 'center'
-                    }}
+                    style={[styles.tab, activeTab === 'movements' && styles.activeTab]}
                 >
-                    <Text style={{ fontWeight: activeTab === 'movements' ? 'bold' : '500', color: activeTab === 'movements' ? '#2563EB' : '#6B7280' }}>Movimientos</Text>
+                    <Text style={[styles.tabText, activeTab === 'movements' && styles.activeTabText]}>Movimientos</Text>
                 </TouchableOpacity>
-            </View>
-
-            <View style={{ paddingHorizontal: 16, pb: 12, paddingBottom: 12 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', borderRadius: 10, paddingHorizontal: 12 }}>
-                    <Ionicons name="search" size={18} color="#9CA3AF" />
-                    <TextInput
-                        style={{ flex: 1, paddingVertical: 8, paddingHorizontal: 8, fontSize: 14, color: '#111827' }}
-                        placeholder={activeTab === 'list' ? "Buscar productos..." : "Buscar movimientos..."}
-                        placeholderTextColor="#9CA3AF"
-                        value={searchTerm}
-                        onChangeText={setSearchTerm}
-                    />
-                </View>
             </View>
         </View>
     )
 
     const renderProductList = () => (
         <ScrollView
-            style={{ flex: 1, padding: 16 }}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#2563EB']} />}
+            style={styles.scrollArea}
+            contentContainerStyle={styles.scrollContent}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#4F46E5']} />}
         >
+            <View style={styles.actionButtonsRow}>
+                <TouchableOpacity style={[styles.mainActionBtn, styles.greenBtn]} onPress={onShowRestockModal}>
+                    <Feather name="plus-circle" size={18} color="#fff" />
+                    <Text style={styles.mainActionBtnText}>Ingreso Mercadería</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.mainActionBtn, styles.indigoBtn]} onPress={onShowProductModal}>
+                    <Feather name="plus" size={18} color="#fff" />
+                    <Text style={styles.mainActionBtnText}>Nuevo Producto</Text>
+                </TouchableOpacity>
+            </View>
+
             {filteredProducts.map((product) => (
-                <View key={product.id} style={{ backgroundColor: 'white', borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 10, overflow: 'hidden' }}>
-                    <TouchableOpacity
-                        style={{ flexDirection: 'row', padding: 14 }}
-                        onPress={() => onEditProduct(product)}
-                    >
-                        <View style={{ width: 44, height: 44, backgroundColor: '#DBEAFE', borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 14 }}>
-                            <Feather name="package" size={20} color="#2563EB" />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <View style={{ flex: 1 }}>
-                                    <Text style={{ fontSize: 15, fontWeight: '600', color: '#111827' }}>{product.nombre}</Text>
-                                    {product.marca && (
-                                        <Text style={{ fontSize: 12, color: '#2563EB', fontWeight: '500' }}>{product.marca}</Text>
-                                    )}
-                                </View>
-                                <TouchableOpacity style={{ padding: 6 }} onPress={() => onDeleteProduct(product.id)}>
-                                    <Ionicons name="trash-outline" size={16} color="#9CA3AF" />
-                                </TouchableOpacity>
+                <TouchableOpacity
+                    key={product.id}
+                    style={styles.productCard}
+                    onPress={() => onEditProduct(product)}
+                >
+                    <View style={styles.productIconBox}>
+                        <Feather name="package" size={20} color="#4F46E5" />
+                    </View>
+                    <View style={styles.productInfo}>
+                        <View style={styles.productHeader}>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.productName}>{product.nombre}</Text>
+                                {product.marca && <Text style={styles.productBrand}>{product.marca}</Text>}
                             </View>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
-                                <Text style={{ color: '#111827', fontWeight: 'bold', fontSize: 16 }}>${product.precio}</Text>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: product.stock < 10 ? '#FEE2E2' : '#F3F4F6', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
-                                    <Text style={{ fontSize: 12, color: product.stock < 10 ? '#DC2626' : '#6B7280', fontWeight: 'bold' }}>
-                                        {product.stock} un.
-                                    </Text>
-                                </View>
+                            <TouchableOpacity style={styles.deleteBtn} onPress={() => onDeleteProduct(product.id)}>
+                                <Feather name="trash-2" size={16} color="#9CA3AF" />
+                            </TouchableOpacity>
+                        </View>
+                        <View style={styles.productFooter}>
+                            <Text style={styles.productPrice}>${product.precio.toLocaleString('es-ES')}</Text>
+                            <View style={[
+                                styles.stockPill,
+                                product.stock < 10 ? styles.lowStockPill : styles.normalStockPill
+                            ]}>
+                                <Text style={[
+                                    styles.stockText,
+                                    product.stock < 10 ? styles.lowStockText : styles.normalStockText
+                                ]}>
+                                    {product.stock} unidades
+                                </Text>
                             </View>
                         </View>
-                    </TouchableOpacity>
-                </View>
+                    </View>
+                </TouchableOpacity>
             ))}
+
             {filteredProducts.length === 0 && (
-                <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 64 }}>
-                    <Feather name="package" size={48} color="#E5E7EB" />
-                    <Text style={{ color: '#9CA3AF', marginTop: 12 }}>No hay productos</Text>
+                <View style={styles.emptyContainer}>
+                    <Feather name="box" size={48} color="#E5E7EB" />
+                    <Text style={styles.emptyText}>No se encontraron productos</Text>
                 </View>
             )}
-            <View style={{ height: 40 }} />
+            <View style={{ height: 100 }} />
         </ScrollView>
     )
 
     const renderMovements = () => (
         <ScrollView
-            style={{ flex: 1, padding: 16 }}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#2563EB']} />}
+            style={styles.scrollArea}
+            contentContainerStyle={styles.scrollContent}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#4F46E5']} />}
         >
             {filteredMovements.map((m) => (
-                <View key={m.id} style={{ backgroundColor: 'white', borderRadius: 12, padding: 12, marginBottom: 10, borderWidth: 1, borderColor: '#E5E7EB', flexDirection: 'row', alignItems: 'center' }}>
-                    <View style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 8,
-                        backgroundColor: m.tipo === 'ENTRADA' ? '#DCFCE7' : '#FEE2E2',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginRight: 12
-                    }}>
-                        <Ionicons
-                            name={m.tipo === 'ENTRADA' ? 'arrow-up' : 'arrow-down'}
-                            size={20}
-                            color={m.tipo === 'ENTRADA' ? '#16A34A' : '#DC2626'}
+                <View key={m.id} style={styles.movementCard}>
+                    <View style={[
+                        styles.movementIconBox,
+                        m.tipo === 'ENTRADA' ? styles.entryBg : styles.exitBg
+                    ]}>
+                        <Feather
+                            name={m.tipo === 'ENTRADA' ? "arrow-up" : "arrow-down"}
+                            size={18}
+                            color={m.tipo === 'ENTRADA' ? "#10B981" : "#EF4444"}
                         />
                     </View>
-                    <View style={{ flex: 1 }}>
-                        <Text style={{ fontWeight: '600', color: '#111827', fontSize: 14 }}>{m.productoNombre}</Text>
-                        <Text style={{ fontSize: 12, color: '#6B7280' }}>
+                    <View style={styles.movementInfo}>
+                        <Text style={styles.movementTitle}>{m.productoNombre}</Text>
+                        <Text style={styles.movementDate}>
                             {new Date(m.fecha).toLocaleDateString()} · {new Date(m.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </Text>
                     </View>
-                    <View style={{ alignItems: 'flex-end' }}>
-                        <Text style={{
-                            fontWeight: 'bold',
-                            fontSize: 16,
-                            color: m.tipo === 'ENTRADA' ? '#16A34A' : '#DC2626'
-                        }}>
+                    <View style={styles.movementAmountBox}>
+                        <Text style={[
+                            styles.movementAmount,
+                            m.tipo === 'ENTRADA' ? styles.entryText : styles.exitText
+                        ]}>
                             {m.tipo === 'ENTRADA' ? '+' : '-'}{m.cantidad}
                         </Text>
-                        <Text style={{ fontSize: 11, color: '#9CA3AF' }}>{m.tipo === 'ENTRADA' ? 'Ingreso' : (m.motivo || 'Salida')}</Text>
+                        <Text style={styles.movementMotivo}>{m.tipo === 'ENTRADA' ? 'Ingreso' : (m.motivo || 'Venta')}</Text>
                     </View>
                 </View>
             ))}
+
             {filteredMovements.length === 0 && (
-                <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 64 }}>
-                    <Ionicons name="swap-vertical-outline" size={48} color="#E5E7EB" />
-                    <Text style={{ color: '#9CA3AF', marginTop: 12 }}>No hay movimientos</Text>
+                <View style={styles.emptyContainer}>
+                    <Feather name="activity" size={48} color="#E5E7EB" />
+                    <Text style={styles.emptyText}>Sin movimientos recientes</Text>
                 </View>
             )}
-            <View style={{ height: 40 }} />
+            <View style={{ height: 100 }} />
         </ScrollView>
     )
 
     if (loading && !products.length) {
         return (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <ActivityIndicator size="small" color="#2563EB" />
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color="#4F46E5" />
             </View>
         )
     }
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
+        <View style={styles.mainContainer}>
             {renderHeader()}
             {activeTab === 'list' ? renderProductList() : renderMovements()}
         </View>
     )
 }
+
+const styles = StyleSheet.create({
+    mainContainer: {
+        flex: 1,
+        backgroundColor: '#F9FAFB',
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    headerContainer: {
+        backgroundColor: 'white',
+        paddingTop: 12,
+        borderBottomLeftRadius: 24,
+        borderBottomRightRadius: 24,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 3,
+        zIndex: 10,
+    },
+    headerTop: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        marginBottom: 16,
+    },
+    headerTitle: {
+        fontSize: 24,
+        fontWeight: '800',
+        color: '#111827',
+    },
+    barcodeBtn: {
+        width: 44,
+        height: 44,
+        backgroundColor: '#EEF2FF',
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    searchBarContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F3F4F6',
+        borderRadius: 16,
+        marginHorizontal: 20,
+        paddingHorizontal: 16,
+        marginBottom: 20,
+    },
+    searchInput: {
+        flex: 1,
+        paddingVertical: 12,
+        paddingHorizontal: 12,
+        fontSize: 15,
+        color: '#111827',
+    },
+    tabContainer: {
+        flexDirection: 'row',
+        paddingHorizontal: 20,
+        marginBottom: 8,
+    },
+    tab: {
+        flex: 1,
+        paddingVertical: 12,
+        alignItems: 'center',
+        borderBottomWidth: 3,
+        borderBottomColor: 'transparent',
+    },
+    activeTab: {
+        borderBottomColor: '#4F46E5',
+    },
+    tabText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#6B7280',
+    },
+    activeTabText: {
+        color: '#4F46E5',
+        fontWeight: '700',
+    },
+    scrollArea: {
+        flex: 1,
+    },
+    scrollContent: {
+        padding: 20,
+    },
+    actionButtonsRow: {
+        flexDirection: 'row',
+        gap: 12,
+        marginBottom: 20,
+    },
+    mainActionBtn: {
+        flex: 1,
+        height: 48,
+        borderRadius: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+    },
+    indigoBtn: { backgroundColor: '#4F46E5' },
+    greenBtn: { backgroundColor: '#10B981' },
+    mainActionBtnText: {
+        color: 'white',
+        fontWeight: '700',
+        fontSize: 13,
+    },
+    productCard: {
+        backgroundColor: 'white',
+        borderRadius: 20,
+        padding: 16,
+        flexDirection: 'row',
+        borderWidth: 1,
+        borderColor: '#F3F4F6',
+        marginBottom: 12,
+    },
+    productIconBox: {
+        width: 48,
+        height: 48,
+        backgroundColor: '#EEF2FF',
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 16,
+    },
+    productInfo: {
+        flex: 1,
+    },
+    productHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+    },
+    productName: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#111827',
+    },
+    productBrand: {
+        fontSize: 12,
+        color: '#4F46E5',
+        fontWeight: '600',
+        marginTop: 2,
+    },
+    deleteBtn: {
+        padding: 4,
+    },
+    productFooter: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 12,
+    },
+    productPrice: {
+        fontSize: 18,
+        fontWeight: '800',
+        color: '#111827',
+    },
+    stockPill: {
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 8,
+    },
+    normalStockPill: { backgroundColor: '#F3F4F6' },
+    lowStockPill: { backgroundColor: '#FEE2E2' },
+    stockText: {
+        fontSize: 12,
+        fontWeight: '700',
+    },
+    normalStockText: { color: '#6B7280' },
+    lowStockText: { color: '#EF4444' },
+    movementCard: {
+        backgroundColor: 'white',
+        borderRadius: 16,
+        padding: 14,
+        marginBottom: 10,
+        borderWidth: 1,
+        borderColor: '#F3F4F6',
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    movementIconBox: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 14,
+    },
+    entryBg: { backgroundColor: '#ECFDF5' },
+    exitBg: { backgroundColor: '#FEF2F2' },
+    movementInfo: {
+        flex: 1,
+    },
+    movementTitle: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#111827',
+    },
+    movementDate: {
+        fontSize: 11,
+        color: '#9CA3AF',
+        marginTop: 2,
+    },
+    movementAmountBox: {
+        alignItems: 'flex-end',
+    },
+    movementAmount: {
+        fontSize: 16,
+        fontWeight: '800',
+    },
+    entryText: { color: '#10B981' },
+    exitText: { color: '#EF4444' },
+    movementMotivo: {
+        fontSize: 10,
+        color: '#9CA3AF',
+        textTransform: 'uppercase',
+        marginTop: 2,
+    },
+    emptyContainer: {
+        alignItems: 'center',
+        paddingVertical: 60,
+    },
+    emptyText: {
+        color: '#9CA3AF',
+        marginTop: 12,
+        fontSize: 14,
+    },
+})

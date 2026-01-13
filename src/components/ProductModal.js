@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react"
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal, ActivityIndicator } from "react-native"
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal, ActivityIndicator, Dimensions } from "react-native"
 import { Ionicons } from '@expo/vector-icons'
 import { productosAPI } from '../services/factory'
 import { SuccessScreen } from './SuccessScreen'
+
+const { height } = Dimensions.get('window')
 
 export const ProductModal = ({ visible, onClose, onAddProduct, onUpdateProduct, onShowBarcodeScanner, initialProduct }) => {
     const [newProduct, setNewProduct] = useState({ nombre: "", precio: "", descripcion: "", codigoBarras: "", marca: "", stock: 0 })
@@ -101,7 +103,7 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onUpdateProduct, 
     }
 
     return (
-        <Modal visible={visible} animationType="fade" transparent={true}>
+        <Modal visible={visible} animationType="slide" transparent={true}>
             <View style={{
                 flex: 1,
                 backgroundColor: 'rgba(0,0,0,0.5)',
@@ -111,13 +113,18 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onUpdateProduct, 
             }}>
                 <View style={{
                     backgroundColor: 'white',
-                    borderRadius: 20,
+                    borderRadius: 24,
                     padding: 24,
                     width: '100%',
                     maxWidth: 500,
                     maxHeight: '90%',
                     borderWidth: 1,
                     borderColor: '#E5E7EB',
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 10 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 20,
+                    elevation: 10
                 }}>
 
                     {/* Header */}
@@ -384,7 +391,7 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onUpdateProduct, 
                     )}
                 </View>
             </View>
-        </Modal>
+        </Modal >
     )
 }
 

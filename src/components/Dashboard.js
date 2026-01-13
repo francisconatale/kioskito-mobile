@@ -1,12 +1,14 @@
 import { useState, useCallback } from "react"
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from "react-native"
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, Image } from "react-native"
 import { Ionicons, Feather } from "@expo/vector-icons"
-import { calculateTotalSalesToday, calculateRealCashToday, calculateTotalInventoryValue } from "../utils/calculations"
+import { calculateTotalSalesToday, calculateRealCashToday, calculateTotalInventoryValue, calculateOutstandingDebt } from "../utils/calculations"
 
-export const Dashboard = ({ products, sales, onShowProductModal, onShowSaleModal, onShowSaleDetails, onRefresh, appMode, onToggleMode }) => {
+export const Dashboard = ({ products, sales, onShowProductModal, onShowSaleModal, onShowSaleDetails, onRefresh, appMode, onToggleMode, clients, onNavigate }) => {
     const totalSalesToday = calculateTotalSalesToday(sales)
     const realCashToday = calculateRealCashToday(sales)
     const totalInventoryValue = calculateTotalInventoryValue(products)
+    const outstandingDebt = calculateOutstandingDebt(clients || [])
+
     const [refreshing, setRefreshing] = useState(false)
 
     const handleRefresh = useCallback(async () => {
@@ -20,189 +22,288 @@ export const Dashboard = ({ products, sales, onShowProductModal, onShowSaleModal
     return (
         <ScrollView
             style={styles.container}
+            contentContainerStyle={styles.contentContainer}
             refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#3b82f6']} />
+                <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#4F46E5']} />
             }
         >
-            {/* Mode toggle moved to Menu */}
 
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Acciones rápidas</Text>
-                <View style={styles.actionsContainer}>
-                    <TouchableOpacity style={[styles.actionButton, styles.blueButton]} onPress={onShowProductModal}>
-                        <Ionicons name="add" size={24} color="#fff" />
-                        <Text style={styles.actionButtonText}>Nuevo Producto</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={[styles.actionButton, styles.greenButton]} onPress={onShowSaleModal}>
-                        <Ionicons name="cart-outline" size={24} color="#fff" />
-                        <Text style={styles.actionButtonText}>Nueva Venta</Text>
-                    </TouchableOpacity>
-                </View>
+            {/* Quick Actions */}
+            <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Acciones Rápidas</Text>
             </View>
 
-            <View style={styles.salesCard}>
-                <Text style={styles.sectionTitle}>Ventas recientes</Text>
+            <View style={styles.actionsGrid}>
+                <TouchableOpacity style={styles.actionCard} onPress={onShowSaleModal}>
+                    <View style={[styles.actionIconBox, styles.successBg]}>
+                        <Ionicons name="cart" size={24} color="#10B981" />
+                    </View>
+                    <Text style={styles.actionText}>Nueva Venta</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.actionCard} onPress={onShowProductModal}>
+                    <View style={[styles.actionIconBox, styles.blueBg]}>
+                        <Ionicons name="add" size={24} color="#3B82F6" />
+                    </View>
+                    <Text style={styles.actionText}>Nuevo Producto</Text>
+                </TouchableOpacity>
+            </View>
+
+            {/* Recent Sales Section */}
+            <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Ventas Recientes</Text>
+                <TouchableOpacity onPress={() => onNavigate("sales")}>
+                    <Text style={styles.viewAllText}>Ver todas</Text>
+                </TouchableOpacity>
+            </View>
+
+            <View style={styles.salesList}>
                 {sales
                     .filter(s => s.tipo !== 'RESTOCK')
                     .slice(-5)
                     .reverse()
                     .map((sale) => (
-                        <TouchableOpacity key={sale.id} style={styles.saleItem} onPress={() => onShowSaleDetails(sale)}>
-                            <View style={styles.saleInfo}>
-                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                    {sale.metodoPago?.toUpperCase() === 'FIADO' && (
-                                        <View style={{ backgroundColor: '#fee2e2', paddingHorizontal: 4, paddingVertical: 1, borderRadius: 4, marginRight: 6 }}>
-                                            <Text style={{ fontSize: 10, color: '#dc2626', fontWeight: 'bold' }}>FIADO</Text>
-                                        </View>
-                                    )}
-                                    {sale.tipo === 'PAGO' && (
-                                        <View style={{ backgroundColor: '#dbeafe', paddingHorizontal: 4, paddingVertical: 1, borderRadius: 4, marginRight: 6 }}>
-                                            <Text style={{ fontSize: 10, color: '#2563EB', fontWeight: 'bold' }}>PAGO</Text>
-                                        </View>
-                                    )}
-                                    <Text style={styles.saleProductCount}>
-                                        {sale.tipo === 'PAGO'
-                                            ? `Pago de ${sale.clienteNombre || 'Cliente'}`
-                                            : `${sale.items.length} ${sale.items.length === 1 ? "producto" : "productos"}`
-                                        }
-                                    </Text>
-                                </View>
+                        <TouchableOpacity key={sale.uuid || sale.id} style={styles.saleItem} onPress={() => onShowSaleDetails(sale)}>
+                            <View style={styles.saleIcon}>
+                                <Feather
+                                    name={sale.tipo === 'PAGO' ? "arrow-down-left" : "shopping-bag"}
+                                    size={18}
+                                    color={sale.tipo === 'PAGO' ? "#2563EB" : "#374151"}
+                                />
+                            </View>
+                            <View style={styles.saleMainInfo}>
+                                <Text style={styles.saleTitle}>
+                                    {sale.tipo === 'PAGO'
+                                        ? `Pago de ${sale.clienteNombre || 'Cliente'}`
+                                        : `${sale.items?.length || 0} ${sale.items?.length === 1 ? "producto" : "productos"}`
+                                    }
+                                </Text>
                                 <Text style={styles.saleTime}>
                                     {new Date(sale.date).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                                    {sale.metodoPago?.toUpperCase() === 'FIADO' && " · Fiado"}
                                 </Text>
                             </View>
-                            <View style={styles.saleDetails}>
-                                <Text style={styles.saleTotal}>${sale.total}</Text>
-                                <Text style={styles.saleLink}>Ver más</Text>
+                            <View style={styles.salePriceBox}>
+                                <Text style={[styles.salePrice, sale.tipo === 'PAGO' && styles.paymentText]}>
+                                    {sale.tipo === 'PAGO' ? '-' : ''}${sale.total}
+                                </Text>
+                                <Ionicons name="chevron-forward" size={14} color="#D1D5DB" />
                             </View>
                         </TouchableOpacity>
                     ))}
-                {sales.length === 0 && <Text style={styles.emptyText}>No hay ventas registradas</Text>}
+                {sales.length === 0 && (
+                    <View style={styles.emptyState}>
+                        <Feather name="coffee" size={32} color="#D1D5DB" />
+                        <Text style={styles.emptyText}>No hay ventas registradas</Text>
+                    </View>
+                )}
             </View>
-        </ScrollView>
+
+            <View style={{ height: 40 }} />
+        </ScrollView >
     )
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 16,
+        backgroundColor: "#F9FAFB",
     },
-    statsContainer: {
-        flexDirection: "row",
-        gap: 12,
-        marginBottom: 24,
+    contentContainer: {
+        padding: 20,
     },
-    statCard: {
-        flex: 1,
-        backgroundColor: "white",
-        padding: 16,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: "#E5E7EB",
+    heroCard: {
+        backgroundColor: "#4F46E5",
+        borderRadius: 24,
+        padding: 24,
+        shadowColor: "#4F46E5",
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.3,
+        shadowRadius: 20,
+        elevation: 8,
+        marginBottom: 20,
     },
-    iconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        alignItems: "center",
-        justifyContent: "center",
+    heroHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         marginBottom: 8,
     },
-    greenIconBg: {
-        backgroundColor: "#d1fae5",
-    },
-    blueIconBg: {
-        backgroundColor: "#dbeafe",
-    },
-    statLabel: {
-        color: "#6b7280",
+    heroLabel: {
+        color: "rgba(255,255,255,0.8)",
         fontSize: 14,
+        fontWeight: "600",
+        textTransform: "uppercase",
+        letterSpacing: 0.5,
     },
-    statValue: {
-        fontSize: 20,
-        fontWeight: "bold",
+    heroValue: {
+        color: "white",
+        fontSize: 36,
+        fontWeight: "800",
+        marginBottom: 24,
+    },
+    heroFooter: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: "rgba(255,255,255,0.1)",
+        borderRadius: 16,
+        padding: 16,
+    },
+    heroSubStat: {
+        flex: 1,
+    },
+    heroSubLabel: {
+        color: "rgba(255,255,255,0.7)",
+        fontSize: 11,
+        fontWeight: "600",
+        marginBottom: 2,
+    },
+    heroSubValue: {
+        color: "white",
+        fontSize: 15,
+        fontWeight: "700",
+    },
+    divider: {
+        width: 1,
+        height: '80%',
+        backgroundColor: "rgba(255,255,255,0.2)",
+        marginHorizontal: 16,
+    },
+    statsGrid: {
+        flexDirection: 'row',
+        gap: 12,
+        marginBottom: 28,
+    },
+    statCardSmall: {
+        flex: 1,
+        backgroundColor: "white",
+        borderRadius: 20,
+        padding: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        borderWidth: 1,
+        borderColor: "#F3F4F6",
+    },
+    iconBox: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    indigoBg: { backgroundColor: "#EEF2FF" },
+    amberBg: { backgroundColor: "#FFFBEB" },
+    statLabelSmall: {
+        fontSize: 12,
+        color: "#6B7280",
+        fontWeight: "500",
+    },
+    statValueSmall: {
+        fontSize: 15,
+        fontWeight: "700",
         color: "#111827",
     },
-    section: {
-        marginBottom: 24,
+    sectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16,
     },
     sectionTitle: {
         fontSize: 18,
-        fontWeight: "bold",
+        fontWeight: "800",
         color: "#111827",
+    },
+    viewAllText: {
+        color: "#4F46E5",
+        fontSize: 14,
+        fontWeight: "600",
+    },
+    actionsGrid: {
+        flexDirection: 'row',
+        gap: 12,
+        marginBottom: 32,
+    },
+    actionCard: {
+        flex: 1,
+        backgroundColor: "white",
+        borderRadius: 20,
+        padding: 16,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: "#F3F4F6",
+    },
+    actionIconBox: {
+        width: 52,
+        height: 52,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
         marginBottom: 12,
     },
-    actionsContainer: {
-        flexDirection: "row",
-        gap: 12,
+    successBg: { backgroundColor: "#ECFDF5" },
+    blueBg: { backgroundColor: "#EFF6FF" },
+    actionText: {
+        fontSize: 13,
+        fontWeight: "700",
+        color: "#374151",
     },
-    actionButton: {
-        flex: 1,
-        padding: 16,
-        borderRadius: 12,
-        alignItems: "center",
-    },
-    blueButton: {
-        backgroundColor: "#3b82f6",
-    },
-    greenButton: {
-        backgroundColor: "#10b981",
-    },
-    actionButtonText: {
-        fontWeight: "600",
-        color: "white",
-        marginTop: 8,
-    },
-    salesCard: {
+    salesList: {
         backgroundColor: "white",
-        padding: 16,
-        borderRadius: 12,
-        shadowColor: "#000",
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        shadowOffset: { width: 0, height: 2 },
-        elevation: 2,
-        marginBottom: 24,
+        borderRadius: 24,
+        padding: 8,
+        borderWidth: 1,
+        borderColor: "#F3F4F6",
     },
     saleItem: {
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: "#f3f4f6",
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        borderRadius: 16,
     },
-    saleInfo: {
+    saleIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: "#F9FAFB",
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 16,
+    },
+    saleMainInfo: {
         flex: 1,
     },
-    saleProductCount: {
-        fontSize: 14,
-        color: "#374151",
-        fontWeight: "500",
+    saleTitle: {
+        fontSize: 15,
+        fontWeight: "700",
+        color: "#111827",
     },
     saleTime: {
         fontSize: 12,
-        color: "#6b7280",
+        color: "#9CA3AF",
         marginTop: 2,
     },
-    saleDetails: {
-        alignItems: "flex-end",
+    salePriceBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
     },
-    saleTotal: {
-        fontWeight: "bold",
-        color: "#10b981",
+    salePrice: {
         fontSize: 16,
+        fontWeight: "800",
+        color: "#111827",
     },
-    saleLink: {
-        fontSize: 10,
-        color: "#3b82f6",
-        marginTop: 2,
+    paymentText: {
+        color: "#2563EB",
+    },
+    emptyState: {
+        alignItems: 'center',
+        padding: 32,
     },
     emptyText: {
-        color: "#9ca3af",
-        textAlign: "center",
-        paddingVertical: 16,
+        color: "#9CA3AF",
+        fontSize: 14,
+        marginTop: 12,
     },
 })

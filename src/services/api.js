@@ -117,6 +117,7 @@ export const productosAPI = {
     create: async (producto) => {
         // Map frontend field names to backend field names
         const backendProducto = {
+            uuid: producto.uuid,
             nombre: producto.nombre,
             descripcion: producto.descripcion,
             precio: producto.precio,
@@ -202,6 +203,7 @@ export const ventasAPI = {
     // POST /api/ventas
     create: async (venta) => {
         const backendVenta = {
+            uuid: venta.uuid,
             fecha: venta.fecha,
             montoTotal: venta.montoTotal,
             metodoPago: venta.metodoPago,

@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Image, KeyboardAvoidingView, Platform, ScrollView, StatusBar } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
-import { Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 
 export default function LoginScreen() {
     const [isRegistering, setIsRegistering] = useState(false);
@@ -33,10 +32,9 @@ export default function LoginScreen() {
             if (isRegistering) {
                 const result = await register({ username, password, nombre, email });
                 if (result.success) {
-                    setSuccessMessage('Usuario registrado correctamente. Ahora puedes iniciar sesión.');
+                    setSuccessMessage('¡Cuenta creada! Ahora puedes iniciar sesión.');
                     setIsRegistering(false);
                     setPassword('');
-                    // Optional: Auto Login?
                 } else {
                     setError(result.message);
                 }
@@ -54,108 +52,151 @@ export default function LoginScreen() {
     };
 
     return (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F3F4F6', padding: 20 }}>
-            <View style={{ width: '100%', maxWidth: 400, backgroundColor: 'white', padding: 30, borderRadius: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3.84, elevation: 5 }}>
-                <View style={{ alignItems: 'center', marginBottom: 30 }}>
-                    <View style={{ width: 80, height: 80, backgroundColor: '#EFF6FF', borderRadius: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-                        <Ionicons name={isRegistering ? "person-add" : "person"} size={40} color="#2563EB" />
-                    </View>
-                    <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#111827' }}>
-                        {isRegistering ? 'Crear Cuenta' : 'Kioskito'}
+        <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={{ flex: 1, backgroundColor: '#F9FAFB' }}
+        >
+            <StatusBar barStyle="dark-content" />
+            <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}>
+                <View style={{ marginBottom: 20 }}>
+                    <Text style={{ fontSize: 24, fontWeight: '800', color: '#111827', textAlign: 'center' }}>
+                        {isRegistering ? 'Crea tu cuenta' : '¡Bienvenido!'}
                     </Text>
-                    <Text style={{ color: '#6B7280', marginTop: 4 }}>
-                        {isRegistering ? 'Registra un nuevo usuario' : 'Inicia sesión para continuar'}
+                    <Text style={{ color: '#6B7280', marginTop: 4, textAlign: 'center' }}>
+                        {isRegistering ? 'Completa los datos para empezar' : 'Ingresa tus credenciales'}
                     </Text>
                 </View>
 
-                {error ? (
-                    <View style={{ backgroundColor: '#FEE2E2', padding: 12, borderRadius: 8, marginBottom: 20, borderWidth: 1, borderColor: '#FECACA' }}>
-                        <Text style={{ color: '#B91C1C', textAlign: 'center' }}>{error}</Text>
-                    </View>
-                ) : null}
+                <View style={{
+                    backgroundColor: 'white',
+                    padding: 30,
+                    borderRadius: 24,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.05,
+                    shadowRadius: 15,
+                    elevation: 5,
+                    borderWidth: 1,
+                    borderColor: '#F3F4F6'
+                }}>
+                    {error ? (
+                        <View style={{ backgroundColor: '#FEF2F2', padding: 14, borderRadius: 12, marginBottom: 20, flexDirection: 'row', alignItems: 'center' }}>
+                            <Feather name="alert-circle" size={18} color="#EF4444" style={{ marginRight: 10 }} />
+                            <Text style={{ color: '#B91C1C', fontSize: 14, flex: 1 }}>{error}</Text>
+                        </View>
+                    ) : null}
 
-                {successMessage ? (
-                    <View style={{ backgroundColor: '#D1FAE5', padding: 12, borderRadius: 8, marginBottom: 20, borderWidth: 1, borderColor: '#A7F3D0' }}>
-                        <Text style={{ color: '#065F46', textAlign: 'center' }}>{successMessage}</Text>
-                    </View>
-                ) : null}
+                    {successMessage ? (
+                        <View style={{ backgroundColor: '#F0FDF4', padding: 14, borderRadius: 12, marginBottom: 20, flexDirection: 'row', alignItems: 'center' }}>
+                            <Feather name="check-circle" size={18} color="#10B981" style={{ marginRight: 10 }} />
+                            <Text style={{ color: '#064E3B', fontSize: 14, flex: 1 }}>{successMessage}</Text>
+                        </View>
+                    ) : null}
 
-                <View style={{ gap: 16 }}>
-                    {isRegistering && (
-                        <>
-                            <View>
-                                <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 6 }}>Nombre</Text>
-                                <TextInput
-                                    style={{ backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 8, padding: 12, color: '#111827' }}
-                                    value={nombre}
-                                    onChangeText={setNombre}
-                                    placeholder="Tu nombre completo"
-                                />
-                            </View>
-                            <View style={{ marginTop: 16 }}>
-                                <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 6 }}>Email</Text>
-                                <TextInput
-                                    style={{ backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 8, padding: 12, color: '#111827' }}
-                                    value={email}
-                                    onChangeText={setEmail}
-                                    keyboardType="email-address"
-                                    autoCapitalize="none"
-                                    placeholder="correo@ejemplo.com"
-                                />
-                            </View>
-                        </>
-                    )}
-
-                    <View>
-                        <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 6 }}>Usuario</Text>
-                        <TextInput
-                            style={{ backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 8, padding: 12, color: '#111827' }}
-                            value={username}
-                            onChangeText={setUsername}
-                            autoCapitalize="none"
-                            placeholder="Ingresa tu usuario"
-                        />
-                    </View>
-
-                    <View>
-                        <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 6 }}>Contraseña</Text>
-                        <TextInput
-                            style={{ backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 8, padding: 12, color: '#111827' }}
-                            value={password}
-                            onChangeText={setPassword}
-                            secureTextEntry
-                            placeholder="Ingresa tu contraseña"
-                        />
-                    </View>
-
-                    <TouchableOpacity
-                        style={{ backgroundColor: '#2563EB', padding: 16, borderRadius: 8, alignItems: 'center', marginTop: 8 }}
-                        onPress={handleSubmit}
-                        disabled={isLoading}
-                    >
-                        {isLoading ? (
-                            <ActivityIndicator color="white" />
-                        ) : (
-                            <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>
-                                {isRegistering ? 'Registrarse' : 'Ingresar'}
-                            </Text>
+                    <View style={{ gap: 20 }}>
+                        {isRegistering && (
+                            <>
+                                <View>
+                                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 8, marginLeft: 4 }}>Nombre Completo</Text>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F9FAFB', borderWidth: 1.5, borderColor: '#E5E7EB', borderRadius: 12, paddingHorizontal: 12 }}>
+                                        <Feather name="user" size={18} color="#9CA3AF" />
+                                        <TextInput
+                                            style={{ flex: 1, padding: 12, color: '#111827', fontSize: 15 }}
+                                            value={nombre}
+                                            onChangeText={setNombre}
+                                            placeholder="Juan Pérez"
+                                            placeholderTextColor="#9CA3AF"
+                                        />
+                                    </View>
+                                </View>
+                                <View>
+                                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 8, marginLeft: 4 }}>Correo Electrónico</Text>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F9FAFB', borderWidth: 1.5, borderColor: '#E5E7EB', borderRadius: 12, paddingHorizontal: 12 }}>
+                                        <Feather name="mail" size={18} color="#9CA3AF" />
+                                        <TextInput
+                                            style={{ flex: 1, padding: 12, color: '#111827', fontSize: 15 }}
+                                            value={email}
+                                            onChangeText={setEmail}
+                                            keyboardType="email-address"
+                                            autoCapitalize="none"
+                                            placeholder="correo@ejemplo.com"
+                                            placeholderTextColor="#9CA3AF"
+                                        />
+                                    </View>
+                                </View>
+                            </>
                         )}
-                    </TouchableOpacity>
 
-                    <TouchableOpacity
-                        style={{ padding: 10, alignItems: 'center' }}
-                        onPress={() => {
-                            setIsRegistering(!isRegistering);
-                            setError('');
-                            setSuccessMessage('');
-                        }}
-                    >
-                        <Text style={{ color: '#2563EB', fontWeight: '600' }}>
-                            {isRegistering ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate'}
-                        </Text>
-                    </TouchableOpacity>
+                        <View>
+                            <Text style={{ fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 8, marginLeft: 4 }}>Usuario</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F9FAFB', borderWidth: 1.5, borderColor: '#E5E7EB', borderRadius: 12, paddingHorizontal: 12 }}>
+                                <Feather name="at-sign" size={18} color="#9CA3AF" />
+                                <TextInput
+                                    style={{ flex: 1, padding: 12, color: '#111827', fontSize: 15 }}
+                                    value={username}
+                                    onChangeText={setUsername}
+                                    autoCapitalize="none"
+                                    placeholder="tu_usuario"
+                                    placeholderTextColor="#9CA3AF"
+                                />
+                            </View>
+                        </View>
+
+                        <View>
+                            <Text style={{ fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 8, marginLeft: 4 }}>Contraseña</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F9FAFB', borderWidth: 1.5, borderColor: '#E5E7EB', borderRadius: 12, paddingHorizontal: 12 }}>
+                                <Feather name="lock" size={18} color="#9CA3AF" />
+                                <TextInput
+                                    style={{ flex: 1, padding: 12, color: '#111827', fontSize: 15 }}
+                                    value={password}
+                                    onChangeText={setPassword}
+                                    secureTextEntry
+                                    placeholder="••••••••"
+                                    placeholderTextColor="#9CA3AF"
+                                />
+                            </View>
+                        </View>
+
+                        <TouchableOpacity
+                            style={{
+                                backgroundColor: '#4F46E5',
+                                padding: 16,
+                                borderRadius: 14,
+                                alignItems: 'center',
+                                marginTop: 10,
+                                shadowColor: "#4F46E5",
+                                shadowOffset: { width: 0, height: 4 },
+                                shadowOpacity: 0.2,
+                                shadowRadius: 8,
+                                elevation: 4
+                            }}
+                            onPress={handleSubmit}
+                            disabled={isLoading}
+                        >
+                            {isLoading ? (
+                                <ActivityIndicator color="white" />
+                            ) : (
+                                <Text style={{ color: 'white', fontWeight: '700', fontSize: 16 }}>
+                                    {isRegistering ? 'Crear Cuenta' : 'Iniciar Sesión'}
+                                </Text>
+                            )}
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={{ padding: 10, alignItems: 'center', marginTop: 10 }}
+                            onPress={() => {
+                                setIsRegistering(!isRegistering);
+                                setError('');
+                                setSuccessMessage('');
+                            }}
+                        >
+                            <Text style={{ color: '#4F46E5', fontWeight: '600', fontSize: 14 }}>
+                                {isRegistering ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate gratis'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
-            </View>
-        </View>
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
 }

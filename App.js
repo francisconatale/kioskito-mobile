@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import * as SplashScreen from 'expo-splash-screen'
 import { View, Text, SafeAreaView, Platform, StatusBar, Image, Animated } from "react-native"
 import { Dashboard } from "./src/components/Dashboard"
@@ -41,6 +41,31 @@ const MainAppContent = () => {
   const [selectedSale, setSelectedSale] = useState(null)
   const [toast, setToast] = useState({ visible: false, message: "", type: "success" })
 
+  const fadeAnim = useRef(new Animated.Value(1)).current
+  const slideAnim = useRef(new Animated.Value(0)).current
+  const prevTabRef = useRef(activeTab)
+
+  const tabOrder = ["dashboard", "sales", "inventory", "menu", "debtors", "analytics", "account"]
+
+  useEffect(() => {
+    if (user && activeTab !== prevTabRef.current) {
+      const prevIndex = tabOrder.indexOf(prevTabRef.current)
+      const currentIndex = tabOrder.indexOf(activeTab)
+      const direction = currentIndex > prevIndex ? 1 : -1
+
+      // Reset slide position
+      slideAnim.setValue(direction * 40)
+
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        tension: 40,
+        friction: 10, // Smoother landing
+      }).start()
+
+      prevTabRef.current = activeTab
+    }
+  }, [activeTab, user])
   const {
     products,
     sales,
@@ -87,7 +112,6 @@ const MainAppContent = () => {
     prepare()
   }, [])
 
-  // Logic handlers...
   const handleShowProductModal = (product = null) => {
     setSelectedProduct(product)
     setShowProductModal(true)
@@ -172,106 +196,125 @@ const MainAppContent = () => {
 
   // CONDITIONAL RENDER AFTER ALL HOOKS
   if (authLoading) return null; // Or a splash/loader
-  if (!user) return <LoginScreen />
 
   return (
     <SafeAreaView style={{
       flex: 1,
       backgroundColor: '#F9FAFB',
-      paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0
     }}>
-      <StatusBar barStyle="dark-content" backgroundColor="white" translucent={true} />
+      <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" translucent={false} />
 
-      {/* Main App Content */}
-      <View style={{ flex: 1 }}>
-        <View style={{ paddingHorizontal: 16, paddingVertical: 4, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#F3F4F6', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-          <Image
-            source={require('./public/kioskito.png')}
-            style={{ height: 60, width: 240 }}
-            resizeMode="contain"
-          />
-        </View>
-
-        {activeTab === "dashboard" && (
-          <Dashboard
-            products={products}
-            sales={sales}
-            onShowProductModal={() => setShowProductModal(true)}
-            onShowSaleModal={() => setShowSaleModal(true)}
-            onShowSaleDetails={handleShowSaleDetails}
-            onRefresh={fetchData}
-            appMode={appMode}
-            onToggleMode={async () => {
-              const newMode = await toggleAppMode()
-              showToast(
-                `Modo cambiado a ${newMode === 'ONLINE' ? 'ONLINE (Nube)' : 'OFFLINE (Local)'}`,
-                newMode === 'ONLINE' ? 'success' : 'warning' // Reuse warning color logic if supported or just standard
-              )
-              // Since showToast supports success/error/warning?
-            }}
-          />
-        )}
-        {activeTab === "inventory" && (
-          <Inventory
-            products={products}
-            sales={sales}
-            movements={movements}
-            loading={loading}
-            onShowProductModal={() => handleShowProductModal()}
-            onEditProduct={handleShowProductModal}
-            onDeleteProduct={handleDeleteProductRequest}
-            onShowBarcodeScanner={() => handleShowBarcodeScanner("product")}
-            onShowRestockModal={() => setShowRestockModal(true)}
-            onRefresh={fetchProducts}
-          />
-        )}
-        {activeTab === "sales" && (
-          <Sales
-            sales={sales}
-            onShowSaleModal={() => setShowSaleModal(true)}
-            onShowBarcodeScanner={(mode) => handleShowBarcodeScanner(mode)}
-            onShowSaleDetails={handleShowSaleDetails}
-            onRefresh={fetchSales}
-          />
-        )}
-        {activeTab === "debtors" && (
-          <Debtors
-            clients={clients}
-            sales={sales}
-            onRegistrarPago={handleRegistrarPago}
-            onShowSaleDetails={handleShowSaleDetails}
-            onShowClientModal={handleShowClientModal}
-            onRefresh={fetchClients}
-            onShowToast={showToast}
-            loading={loading}
-            onBack={() => setActiveTab("menu")}
-          />
-        )}
-        {activeTab === "analytics" && (
-          <Analytics
-            products={products}
-            sales={sales}
-            clients={clients}
-            onRefresh={fetchData}
-            onBack={() => setActiveTab("menu")}
-          />
-        )}
-        {activeTab === "menu" && (
-          <Menu
-            onNavigate={setActiveTab}
-            appMode={appMode}
-            onToggleMode={toggleAppMode}
-            onRefresh={fetchData}
-            user={user}
-            onLogout={logout}
-          />
-        )}
-        {activeTab === "account" && (
-          <Account onLogout={logout} onBack={() => setActiveTab("menu")} />
-        )}
-
-        <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+      <View style={{
+        alignItems: 'center',
+        paddingVertical: 12,
+        backgroundColor: 'white',
+        borderBottomWidth: 1,
+        borderBottomColor: '#F3F4F6',
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 5,
+        elevation: 2
+      }}>
+        <Image
+          source={require('./public/kioskito.png')}
+          style={{ height: 42, width: 168 }}
+          resizeMode="contain"
+        />
       </View>
+
+      {!user ? (
+        <LoginScreen />
+      ) : (
+        /* Main App Content */
+        <Animated.View style={{
+          flex: 1,
+          transform: [{ translateX: slideAnim }]
+        }}>
+
+          {activeTab === "dashboard" && (
+            <Dashboard
+              products={products}
+              sales={sales}
+              onShowProductModal={() => setShowProductModal(true)}
+              onShowSaleModal={() => setShowSaleModal(true)}
+              onShowSaleDetails={handleShowSaleDetails}
+              onRefresh={fetchData}
+              appMode={appMode}
+              clients={clients}
+              onNavigate={setActiveTab}
+              onToggleMode={async () => {
+                const newMode = await toggleAppMode()
+                showToast(
+                  `Modo cambiado a ${newMode === 'ONLINE' ? 'ONLINE (Nube)' : 'OFFLINE (Local)'}`,
+                  newMode === 'ONLINE' ? 'success' : 'warning' // Reuse warning color logic if supported or just standard
+                )
+                // Since showToast supports success/error/warning?
+              }}
+            />
+          )}
+          {activeTab === "inventory" && (
+            <Inventory
+              products={products}
+              sales={sales}
+              movements={movements}
+              loading={loading}
+              onShowProductModal={() => handleShowProductModal()}
+              onEditProduct={handleShowProductModal}
+              onDeleteProduct={handleDeleteProductRequest}
+              onShowBarcodeScanner={() => handleShowBarcodeScanner("product")}
+              onShowRestockModal={() => setShowRestockModal(true)}
+              onRefresh={fetchProducts}
+            />
+          )}
+          {activeTab === "sales" && (
+            <Sales
+              sales={sales}
+              onShowSaleModal={() => setShowSaleModal(true)}
+              onShowBarcodeScanner={(mode) => handleShowBarcodeScanner(mode)}
+              onShowSaleDetails={handleShowSaleDetails}
+              onRefresh={fetchSales}
+            />
+          )}
+          {activeTab === "debtors" && (
+            <Debtors
+              clients={clients}
+              sales={sales}
+              onRegistrarPago={handleRegistrarPago}
+              onShowSaleDetails={handleShowSaleDetails}
+              onShowClientModal={handleShowClientModal}
+              onRefresh={fetchClients}
+              onShowToast={showToast}
+              loading={loading}
+              onBack={() => setActiveTab("menu")}
+            />
+          )}
+          {activeTab === "analytics" && (
+            <Analytics
+              products={products}
+              sales={sales}
+              clients={clients}
+              onRefresh={fetchData}
+              onBack={() => setActiveTab("menu")}
+            />
+          )}
+          {activeTab === "menu" && (
+            <Menu
+              onNavigate={setActiveTab}
+              appMode={appMode}
+              onToggleMode={toggleAppMode}
+              onRefresh={fetchData}
+              user={user}
+              onLogout={logout}
+            />
+          )}
+          {activeTab === "account" && (
+            <Account onLogout={logout} onBack={() => setActiveTab("menu")} />
+          )}
+
+          <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+        </Animated.View>
+      )}
 
 
 
@@ -321,6 +364,7 @@ const MainAppContent = () => {
         onCompleteRestock={handleCompleteRestock}
         onClearCart={clearRestockCart}
         onShowBarcodeScanner={handleShowBarcodeScanner}
+
       />
 
       <SaleDetailsModal

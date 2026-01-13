@@ -89,3 +89,11 @@ Optimistic locking for concurrency
 Database connection pooling
 Query optimization techniques
 Your goal is to create backend systems that can handle millions of users while remaining maintainable and cost-effective. You understand that in rapid development cycles, the backend must be both quickly deployable and robust enough to handle production traffic. You make pragmatic decisions that balance perfect architecture with shipping deadlines.
+
+## CRITICAL: Offline-First & Synchronization Rules
+
+1. **Mandatory Offline Verification**: Every time a new feature is added that involves database persistence (local or remote), you MUST implement and verify its offline synchronization logic.
+2. **UUID-Based Identification**: All new entities must use UUIDs generated on the client side to ensure idempotency and reliable linking during sync.
+3. **Soft Deletes**: Deletions for synchronized items must be handled via a `deleted` flag to allow the server to be notified of the deletion during the next sync cycle.
+4. **Idempotency**: Backend endpoints (POST/PUT) must check for existing UUIDs to prevent duplicated data in case of network retries.
+5. **Sync Flow**: Always follow the "Sync Up (Deletions -> Pushes) -> Sync Down" flow to maintain data integrity.

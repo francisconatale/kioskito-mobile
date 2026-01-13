@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react"
 import { productosAPI, ventasAPI, clientesAPI, movimientosStockAPI, setMode, getMode, initService } from "../services/factory"
+import { syncService } from "../services/sync"
 import { Alert } from "react-native"
+import * as Crypto from 'expo-crypto'
 
 export const useBusinessData = (user) => {
     const [products, setProducts] = useState([])
@@ -31,9 +33,22 @@ export const useBusinessData = (user) => {
 
     const toggleAppMode = async () => {
         const newMode = appMode === 'ONLINE' ? 'OFFLINE' : 'ONLINE'
+
+        setLoading(true)
+        try {
+            // Before switching, we attempt to sync everything
+            // This ensures Online -> Offline gets latest data
+            // and Offline -> Online uploads pending sales
+            await syncService.syncAll()
+        } catch (e) {
+            console.warn("Auto-sync failed during mode toggle:", e)
+            // We continue anyway so the user can switch mode
+        }
+
         await setMode(newMode)
         setAppMode(newMode)
         await fetchData()
+        setLoading(false)
         return newMode
     }
 
@@ -308,7 +323,9 @@ export const useBusinessData = (user) => {
             const subtotal = saleCart.reduce((sum, item) => sum + item.subtotal, 0)
             const total = subtotal + recargo
 
+            const uuid = Crypto.randomUUID()
             const ventaRequest = {
+                uuid: uuid,
                 fecha: new Date().toISOString(),
                 montoTotal: subtotal,
                 metodoPago: metodoPago,
