@@ -88,6 +88,7 @@ export const initDB = async () => {
                 monto_total REAL NOT NULL,
                 metodo_pago TEXT NOT NULL,
                 cliente_id INTEGER,
+                usuario_id INTEGER,
                 tipo TEXT DEFAULT 'VENTA',
                 synced INTEGER DEFAULT 0,
                 deleted INTEGER DEFAULT 0,
@@ -109,6 +110,8 @@ export const initDB = async () => {
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 uuid TEXT UNIQUE NOT NULL,
                 producto_id INTEGER NOT NULL,
+                tipo TEXT NOT NULL,
+                cantidad INTEGER NOT NULL,
                 motivo TEXT,
                 fecha TEXT NOT NULL,
                 synced INTEGER DEFAULT 0,
@@ -272,8 +275,8 @@ export const ventasAPI = {
             return await database.withTransactionAsync(async () => {
                 const uuid = venta.uuid || Crypto.randomUUID();
                 const result = await database.runAsync(
-                    'INSERT INTO ventas (uuid, fecha, monto_total, metodo_pago, cliente_id, tipo, synced) VALUES (?, ?, ?, ?, ?, ?, 0)',
-                    [uuid, venta.fecha, venta.montoTotal, venta.metodoPago, venta.clienteId, venta.tipo]
+                    'INSERT INTO ventas (uuid, fecha, monto_total, metodo_pago, cliente_id, usuario_id, tipo, synced) VALUES (?, ?, ?, ?, ?, ?, ?, 0)',
+                    [uuid, venta.fecha, venta.montoTotal, venta.metodoPago, venta.clienteId, venta.usuarioId, venta.tipo]
                 );
                 const ventaId = result.lastInsertRowId;
 
@@ -358,9 +361,17 @@ export const ventasAPI = {
         if (!uuids || uuids.length === 0) return;
         const database = await getDB();
         const placeholders = uuids.map(() => '?').join(',');
+
+        // Mark ventas as synced
         await database.runAsync(
             `UPDATE ventas SET synced = 1 WHERE uuid IN (${placeholders})`,
             uuids
+        );
+
+        // Also mark associated stock movements as synced
+        // This prevents the SALIDA movements created by sales from being uploaded again
+        await database.runAsync(
+            `UPDATE movimientos_stock SET synced = 1 WHERE motivo LIKE 'VENTA%' AND synced = 0`
         );
     },
 
@@ -530,11 +541,15 @@ export const movimientosStockAPI = {
 
     getPending: async () => {
         const database = await getDB();
+        // CRITICAL: Do NOT sync stock movements created by sales
+        // The backend will create them automatically when processing the sale
+        // Only sync MANUAL movements (restocks, adjustments, etc.)
         const rows = await database.getAllAsync(`
             SELECT m.*, p.uuid as producto_uuid 
             FROM movimientos_stock m
             JOIN productos p ON m.producto_id = p.id
-            WHERE m.synced = 0
+            WHERE m.synced = 0 
+            AND (m.motivo IS NULL OR m.motivo NOT LIKE 'VENTA%')
         `);
         return rows.map(r => ({
             uuid: r.uuid,

@@ -7,9 +7,6 @@ export const syncService = {
     syncUp: async () => {
         try {
             console.log('Starting Sync UP...');
-
-            // A. Deletions (Sync deletions to server)
-            // 1. Productos Deletions
             const deletedProductos = await LocalDB.productosAPI.getDeleted();
             if (deletedProductos.length > 0) {
                 const processedUuids = [];
@@ -52,9 +49,21 @@ export const syncService = {
             // B. Productos (Pending Upload)
             const pendingProductos = await LocalDB.productosAPI.getPending();
             if (pendingProductos && pendingProductos.length > 0) {
+                const pendingMovimientos = await LocalDB.movimientosStockAPI.getPending();
+                const productosWithPendingMovements = new Set(
+                    pendingMovimientos.map(m => m.productoUuid)
+                );
+
                 const syncedProductUuids = [];
                 for (const producto of pendingProductos) {
                     try {
+                        // Skip products that have pending manual stock movements
+                        // The movement sync will handle the stock change on the server
+                        if (productosWithPendingMovements.has(producto.uuid)) {
+                            console.log(`Skipping product ${producto.nombre} - has pending stock movements`);
+                            continue;
+                        }
+
                         await OnlineAPI.productosAPI.create({
                             ...producto,
                             uuid: producto.uuid
@@ -89,7 +98,35 @@ export const syncService = {
                 }
             }
 
-            // D. Ventas (Pending Upload)
+            const pendingMovimientos = await LocalDB.movimientosStockAPI.getPending();
+            if (pendingMovimientos && pendingMovimientos.length > 0) {
+                console.log(`Found ${pendingMovimientos.length} pending stock movements.`);
+                const syncedMovUuids = [];
+                for (const mov of pendingMovimientos) {
+                    try {
+                        await OnlineAPI.movimientosStockAPI.create(mov);
+                        syncedMovUuids.push(mov.uuid);
+                    } catch (e) {
+                        console.error("Failed to upload stock movement:", mov.uuid, e);
+                    }
+                }
+                if (syncedMovUuids.length > 0) {
+                    await LocalDB.movimientosStockAPI.markSynced(syncedMovUuids);
+
+                    // Also mark the corresponding products as synced
+                    // since their stock change has been applied on the server
+                    const productUuidsToMark = [...new Set(pendingMovimientos
+                        .filter(m => syncedMovUuids.includes(m.uuid))
+                        .map(m => m.productoUuid))];
+
+                    if (productUuidsToMark.length > 0) {
+                        await LocalDB.productosAPI.markSynced(productUuidsToMark);
+                    }
+
+                    console.log(`Successfully synced ${syncedMovUuids.length} stock movements.`);
+                }
+            }
+
             const pendingVentas = await LocalDB.ventasAPI.getPending();
             if (pendingVentas.length === 0) {
                 console.log('No pending sales to sync.');
@@ -105,11 +142,11 @@ export const syncService = {
                             montoTotal: venta.montoTotal || venta.total,
                             metodoPago: venta.metodoPago,
                             clienteId: venta.clienteId,
-                            clienteUuid: venta.clienteUuid, // UUID is much safer for sync!
+                            clienteUuid: venta.clienteUuid,
                             tipo: venta.tipo,
                             detalles: venta.items.map(d => ({
                                 productoId: d.productoId || d.producto_id,
-                                productoUuid: d.productUuid || d.producto_uuid, // Send UUID for safer lookup
+                                productoUuid: d.productUuid || d.producto_uuid,
                                 cantidad: d.quantity || d.cantidad,
                                 precioUnitario: d.price || d.precio_unitario
                             }))
@@ -126,24 +163,6 @@ export const syncService = {
                 if (syncedUuids.length > 0) {
                     await LocalDB.ventasAPI.markSynced(syncedUuids);
                     console.log(`Successfully synced ${syncedUuids.length} sales.`);
-                }
-            }
-
-            // E. Movimientos Stock (Pending Upload)
-            const pendingMovimientos = await LocalDB.movimientosStockAPI.getPending();
-            if (pendingMovimientos && pendingMovimientos.length > 0) {
-                console.log(`Found ${pendingMovimientos.length} pending stock movements.`);
-                const syncedMovUuids = [];
-                for (const mov of pendingMovimientos) {
-                    try {
-                        await OnlineAPI.movimientosStockAPI.create(mov);
-                        syncedMovUuids.push(mov.uuid);
-                    } catch (e) {
-                        console.error("Failed to upload stock movement:", mov.uuid, e);
-                    }
-                }
-                if (syncedMovUuids.length > 0) {
-                    await LocalDB.movimientosStockAPI.markSynced(syncedMovUuids);
                 }
             }
 
