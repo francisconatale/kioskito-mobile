@@ -434,11 +434,28 @@ export const clientesAPI = {
 
     registrarPago: async (id, monto) => {
         const database = await getDB();
-        await database.runAsync(
-            'UPDATE clientes SET deuda = deuda - ?, synced = 0 WHERE id = ?',
-            [monto, id]
-        );
-        return { success: true };
+        try {
+            return await database.withTransactionAsync(async () => {
+                // 1. Update local debt
+                await database.runAsync(
+                    'UPDATE clientes SET deuda = deuda - ?, synced = 0 WHERE id = ?',
+                    [monto, id]
+                );
+
+                // 2. Create a "Venta" record of type PAGO for sync
+                const uuid = Crypto.randomUUID();
+                const fecha = new Date().toISOString();
+                await database.runAsync(
+                    'INSERT INTO ventas (uuid, fecha, monto_total, metodo_pago, cliente_id, tipo, synced) VALUES (?, ?, ?, ?, ?, ?, 0)',
+                    [uuid, fecha, monto, 'EFECTIVO', id, 'PAGO']
+                );
+
+                return { success: true };
+            });
+        } catch (e) {
+            console.error("Error registering payment offline:", e);
+            throw e;
+        }
     },
 
     getPending: async () => {

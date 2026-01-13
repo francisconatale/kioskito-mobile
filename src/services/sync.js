@@ -49,19 +49,9 @@ export const syncService = {
             // B. Productos (Pending Upload)
             const pendingProductos = await LocalDB.productosAPI.getPending();
             if (pendingProductos && pendingProductos.length > 0) {
-                const pendingMovimientos = await LocalDB.movimientosStockAPI.getPending();
-                const productosWithPendingMovements = new Set(
-                    pendingMovimientos.map(m => m.productoUuid)
-                );
-
                 const syncedProductUuids = [];
                 for (const producto of pendingProductos) {
                     try {
-                        if (productosWithPendingMovements.has(producto.uuid)) {
-                            console.log(`Skipping product ${producto.nombre} - has pending stock movements`);
-                            continue;
-                        }
-
                         const { stock, id, ...productPayload } = producto;
                         await OnlineAPI.productosAPI.create({
                             ...productPayload,
