@@ -496,7 +496,8 @@ export const useBusinessData = (user) => {
                 clienteId: originalSale.clienteId,
                 usuarioId: user?.id,
                 tipo: 'DEVOLUCION',
-                ventaOriginalId: originalSale.id, // Referencia para actualizar la venta original
+                ventaOriginalId: originalSale.id, // Referencia para actualizar la venta original (Local ID)
+                ventaOriginalUuid: originalSale.uuid, // Referencia para el Backend
                 detalles: originalSale.items.map(item => ({
                     productoId: item.productId,
                     productoUuid: item.productoUuid,

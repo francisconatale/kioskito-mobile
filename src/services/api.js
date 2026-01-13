@@ -252,7 +252,9 @@ export const ventasAPI = {
             clienteId: venta.clienteId,
             clienteUuid: venta.clienteUuid,
             detalles: venta.detalles,
-            tipo: venta.tipo || 'VENTA'
+            tipo: venta.tipo || 'VENTA',
+            ventaOriginalId: venta.ventaOriginalId,
+            ventaOriginalUuid: venta.ventaOriginalUuid
         }
         return await apiRequest('/ventas', {
             method: 'POST',

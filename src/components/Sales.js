@@ -71,7 +71,12 @@ export const Sales = ({ sales, onShowSaleModal, onShowBarcodeScanner, onShowSale
                                         : (sale.tipo === 'DEVOLUCION' ? 'DEVOLUCIÓN' : `${sale.items?.length || 0} producto${sale.items?.length === 1 ? '' : 's'}`)
                                     }
                                 </Text>
-                                <Text style={[styles.salePrice, sale.tipo === 'DEVOLUCION' && { color: '#B91C1C' }]}>
+                                <Text style={[
+                                    styles.salePrice,
+                                    sale.tipo === 'VENTA' && { color: '#10B981' },
+                                    sale.tipo === 'PAGO' && { color: '#2563EB' },
+                                    sale.tipo === 'DEVOLUCION' && { color: '#B91C1C' }
+                                ]}>
                                     {sale.tipo === 'DEVOLUCION' ? '-' : ''}${sale.total}
                                 </Text>
                             </View>
@@ -231,7 +236,6 @@ const styles = StyleSheet.create({
     salePrice: {
         fontSize: 16,
         fontWeight: '800',
-        color: '#B91C1C', // Red for returns
         marginLeft: 8,
     },
     saleFooter: {
