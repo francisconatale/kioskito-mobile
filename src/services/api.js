@@ -227,6 +227,7 @@ export const ventasAPI = {
             montoTotal: venta.montoTotal,
             metodoPago: venta.metodoPago,
             clienteId: venta.clienteId,
+            clienteUuid: venta.clienteUuid,
             detalles: venta.detalles,
             tipo: venta.tipo || 'VENTA'
         }

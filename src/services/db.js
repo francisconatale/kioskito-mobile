@@ -1,21 +1,11 @@
 import * as SQLite from 'expo-sqlite';
 import * as Crypto from 'expo-crypto';
 import { createGenericRepository } from './genericDb';
-
-// Migration helper - usually you'd have a better migration system
-// For now we just add columns if they don't exist in init
-// But since the user accepted nuking DB, we rely on CREATE TABLE IF NOT EXISTS
-// However, if table exists without new column, it won't add it.
-// We should perhaps blindly try to add columns or handle versions.
-// Given previous instructions, I will assume tables are recreated or user cleared data.
-
-
 let db;
 
 const getDB = async () => {
     if (db) return db;
 
-    // If a database instance exists in global scope (from HMR), close it first
     if (global._kioskito_db_instance) {
         try {
             console.log('Closing stale DB connection from HMR...');
@@ -166,12 +156,29 @@ export const productosAPI = {
 
     create: async (producto) => {
         // Adapt field name for generic create
+        const initialStock = producto.stock || 0;
         const data = {
             ...producto,
+            stock: 0, // Start at 0, movement will set it
             codigo_barra: producto.codigoBarras ? producto.codigoBarras.trim() || null : null
         };
         delete data.codigoBarras;
-        return genericProductos.create(data);
+
+        const createdProduct = await genericProductos.create(data);
+
+        if (initialStock > 0) {
+            await movimientosStockAPI.create({
+                productoId: createdProduct.id,
+                tipo: 'ENTRADA',
+                cantidad: initialStock,
+                motivo: 'Stock Inicial',
+                fecha: new Date().toISOString()
+            });
+            // Update the object to return for UI
+            createdProduct.stock = initialStock;
+        }
+
+        return createdProduct;
     },
 
     update: async (id, producto) => {
@@ -541,9 +548,7 @@ export const movimientosStockAPI = {
 
     getPending: async () => {
         const database = await getDB();
-        // CRITICAL: Do NOT sync stock movements created by sales
-        // The backend will create them automatically when processing the sale
-        // Only sync MANUAL movements (restocks, adjustments, etc.)
+
         const rows = await database.getAllAsync(`
             SELECT m.*, p.uuid as producto_uuid 
             FROM movimientos_stock m
@@ -569,5 +574,19 @@ export const movimientosStockAPI = {
             `UPDATE movimientos_stock SET synced = 1 WHERE uuid IN (${placeholders})`,
             uuids
         );
+    },
+
+    getPendingAdjustmentForProduct: async (productUuid) => {
+        const database = await getDB();
+        const rows = await database.getAllAsync(`
+            SELECT tipo, cantidad 
+            FROM movimientos_stock m
+            JOIN productos p ON m.producto_id = p.id
+            WHERE p.uuid = ? AND m.synced = 0
+        `, [productUuid]);
+
+        return rows.reduce((total, m) => {
+            return total + (m.tipo === 'ENTRADA' ? m.cantidad : -m.cantidad);
+        }, 0);
     }
 };

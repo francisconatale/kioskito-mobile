@@ -57,15 +57,14 @@ export const syncService = {
                 const syncedProductUuids = [];
                 for (const producto of pendingProductos) {
                     try {
-                        // Skip products that have pending manual stock movements
-                        // The movement sync will handle the stock change on the server
                         if (productosWithPendingMovements.has(producto.uuid)) {
                             console.log(`Skipping product ${producto.nombre} - has pending stock movements`);
                             continue;
                         }
 
+                        const { stock, id, ...productPayload } = producto;
                         await OnlineAPI.productosAPI.create({
-                            ...producto,
+                            ...productPayload,
                             uuid: producto.uuid
                         });
                         syncedProductUuids.push(producto.uuid);
@@ -141,11 +140,10 @@ export const syncService = {
                             fecha: venta.fecha || venta.date,
                             montoTotal: venta.montoTotal || venta.total,
                             metodoPago: venta.metodoPago,
-                            clienteId: venta.clienteId,
+                            // Only send UUIDs for sync! Local IDs (1, 2, 3...) do not match server IDs
                             clienteUuid: venta.clienteUuid,
                             tipo: venta.tipo,
                             detalles: venta.items.map(d => ({
-                                productoId: d.productoId || d.producto_id,
                                 productoUuid: d.productUuid || d.producto_uuid,
                                 cantidad: d.quantity || d.cantidad,
                                 precioUnitario: d.price || d.precio_unitario
