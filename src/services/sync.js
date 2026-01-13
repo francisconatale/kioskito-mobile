@@ -50,15 +50,12 @@ export const syncService = {
                             fecha: venta.fecha || venta.date,
                             montoTotal: venta.montoTotal || venta.total,
                             metodoPago: venta.metodoPago,
-                            clienteId: venta.clienteId, // Make sure this ID is mapped correctly if it was created offline! 
-                            // This is a TRICKY part: If client was created offline, it has a local ID. 
-                            // The backend won't know this ID.
-                            // IDEAL: Use UUID for client reference in VentaDTO too. 
-                            // FOR NOW: We might fail if client is new. 
-                            // Mitigation: Synced Clients first.
+                            clienteId: venta.clienteId,
+                            clienteUuid: venta.clienteUuid, // UUID is much safer for sync!
                             tipo: venta.tipo,
                             detalles: venta.items.map(d => ({
-                                productoId: d.productId || d.producto_id, // Same issue with Product ID
+                                productoId: d.productoId || d.producto_id,
+                                productoUuid: d.productUuid || d.producto_uuid, // Send UUID for safer lookup
                                 cantidad: d.quantity || d.cantidad,
                                 precioUnitario: d.price || d.precio_unitario
                             }))

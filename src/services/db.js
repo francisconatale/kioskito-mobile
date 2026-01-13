@@ -1,5 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 import * as Crypto from 'expo-crypto';
+import { createGenericRepository } from './genericDb';
 
 // Migration helper - usually you'd have a better migration system
 // For now we just add columns if they don't exist in init
@@ -121,13 +122,15 @@ const mapProductoFromDB = (p) => ({
 
 const mapVentaFromDB = (v, detalles = []) => ({
     ...v,
-    metodoPago: v.metodo_pago || v.metodoPago, // Normalize for UI
+    metodoPago: v.metodo_pago || v.metodo_pago, // Normalize for UI
     clienteId: v.cliente_id || v.clienteId, // Normalize for UI
+    clienteUuid: v.cliente_uuid || v.clienteUuid,
     tipo: v.tipo || 'VENTA',
     total: v.monto_total,
     date: v.fecha,
     items: detalles.map(d => ({
         productId: d.producto_id,
+        productUuid: d.producto_uuid,
         productName: d.nombre_producto, // Requires join
         productoMarca: d.marca_producto,
         productoDescripcion: d.descripcion_producto,
@@ -137,18 +140,10 @@ const mapVentaFromDB = (v, detalles = []) => ({
     }))
 });
 
-export const productosAPI = {
-    getAll: async () => {
-        const database = await getDB();
-        const rows = await database.getAllAsync('SELECT * FROM productos ORDER BY nombre');
-        return rows.map(mapProductoFromDB);
-    },
+const genericProductos = createGenericRepository('productos', getDB, mapProductoFromDB);
 
-    getById: async (id) => {
-        const database = await getDB();
-        const row = await database.getFirstAsync('SELECT * FROM productos WHERE id = ?', [id]);
-        return row ? mapProductoFromDB(row) : null;
-    },
+export const productosAPI = {
+    ...genericProductos,
 
     search: async (query) => {
         const database = await getDB();
@@ -161,33 +156,22 @@ export const productosAPI = {
     },
 
     create: async (producto) => {
-        const database = await getDB();
-        const codigoBarra = producto.codigoBarras ? producto.codigoBarras.trim() || null : null;
-        const uuid = producto.uuid || Crypto.randomUUID();
-
-        // Start as synced=0 (false) -> needs upload
-        const result = await database.runAsync(
-            'INSERT INTO productos (uuid, nombre, marca, descripcion, precio, stock, codigo_barra, synced) VALUES (?, ?, ?, ?, ?, ?, ?, 0)',
-            [uuid, producto.nombre, producto.marca, producto.descripcion, producto.precio, producto.stock, codigoBarra]
-        );
-        return { ...producto, id: result.lastInsertRowId, codigoBarras: codigoBarra, uuid, synced: 0 };
+        // Adapt field name for generic create
+        const data = {
+            ...producto,
+            codigo_barra: producto.codigoBarras ? producto.codigoBarras.trim() || null : null
+        };
+        delete data.codigoBarras;
+        return genericProductos.create(data);
     },
 
     update: async (id, producto) => {
-        const database = await getDB();
-        const codigoBarra = producto.codigoBarras ? producto.codigoBarras.trim() || null : null;
-
-        await database.runAsync(
-            'UPDATE productos SET nombre = ?, marca = ?, descripcion = ?, precio = ?, stock = ?, codigo_barra = ? WHERE id = ?',
-            [producto.nombre, producto.marca, producto.descripcion, producto.precio, producto.stock, codigoBarra, id]
-        );
-        return { ...producto, id, codigoBarras: codigoBarra };
-    },
-
-    delete: async (id) => {
-        const database = await getDB();
-        await database.runAsync('DELETE FROM productos WHERE id = ?', [id]);
-        return { success: true };
+        const data = {
+            ...producto,
+            codigo_barra: producto.codigoBarras ? producto.codigoBarras.trim() || null : null
+        };
+        delete data.codigoBarras;
+        return genericProductos.update(id, data);
     },
 
     getByBarcode: async (codigoBarra) => {
@@ -196,16 +180,8 @@ export const productosAPI = {
         return row ? mapProductoFromDB(row) : null;
     },
 
-    getByUuid: async (uuid) => {
-        const database = await getDB();
-        const row = await database.getFirstAsync('SELECT * FROM productos WHERE uuid = ?', [uuid]);
-        return row ? mapProductoFromDB(row) : null;
-    },
-
     lookupBarcode: async (code) => {
-        // In local mode, just reuse getByBarcode
-        const product = await productosAPI.getByBarcode(code);
-        return product;
+        return productosAPI.getByBarcode(code);
     },
 
     getLowStock: async (threshold = 10) => {
@@ -335,12 +311,17 @@ export const ventasAPI = {
 
     getPending: async () => {
         const database = await getDB();
-        // We need details too
-        const ventas = await database.getAllAsync('SELECT * FROM ventas WHERE synced = 0');
+        // We need details too, AND client UUID for sync
+        const ventas = await database.getAllAsync(`
+            SELECT v.*, c.uuid as cliente_uuid 
+            FROM ventas v 
+            LEFT JOIN clientes c ON v.cliente_id = c.id 
+            WHERE v.synced = 0
+        `);
 
         return await Promise.all(ventas.map(async (v) => {
             const detalles = await database.getAllAsync(`
-                SELECT dv.*, p.nombre as nombre_producto, p.marca as marca_producto, p.codigo_barra 
+                SELECT dv.*, p.nombre as nombre_producto, p.marca as marca_producto, p.codigo_barra, p.uuid as producto_uuid 
                 FROM detalle_ventas dv 
                 LEFT JOIN productos p ON dv.producto_id = p.id 
                 WHERE dv.venta_id = ?
@@ -390,43 +371,10 @@ export const ventasAPI = {
     }
 };
 
+const genericClientes = createGenericRepository('clientes', getDB);
+
 export const clientesAPI = {
-    getAll: async () => {
-        const database = await getDB();
-        return await database.getAllAsync('SELECT * FROM clientes ORDER BY nombre');
-    },
-
-    create: async (cliente) => {
-        const database = await getDB();
-        const deuda = cliente.deuda || 0;
-        const uuid = cliente.uuid || Crypto.randomUUID();
-
-        const result = await database.runAsync(
-            'INSERT INTO clientes (uuid, nombre, email, telefono, deuda, synced) VALUES (?, ?, ?, ?, ?, 0)',
-            [uuid, cliente.nombre, cliente.email, cliente.telefono, deuda]
-        );
-        return { ...cliente, id: result.lastInsertRowId, deuda, uuid, synced: 0 };
-    },
-
-    update: async (id, cliente) => {
-        const database = await getDB();
-        // If deuda is provided in update, use it, otherwise keep existing?
-        // Usually update provides full object. If partial, we need to be careful.
-        // Assuming full object for restore.
-        // However, for normal "edit client" from UI, we might not pass debt and accidentally query 0?
-        // The UI usually fetches client, edits fields, saves back. So debt should be in the object.
-        // Let's assume passed client has correct debt.
-
-        // Wait, if I edit a client in UI (change name), does it pass debt?
-        // ClientModal uses `initialClient`. If `initialClient` has `deuda`, state has `deuda`?
-        // I should check ClientModal later to be safe, but for restore it definitely passes it.
-
-        await database.runAsync(
-            'UPDATE clientes SET nombre = ?, email = ?, telefono = ?, deuda = ? WHERE id = ?',
-            [cliente.nombre, cliente.email, cliente.telefono, cliente.deuda || 0, id]
-        );
-        return { ...cliente, id };
-    },
+    ...genericClientes,
 
     search: async (query) => {
         const database = await getDB();
@@ -438,28 +386,14 @@ export const clientesAPI = {
     },
 
     registrarPago: async (id, monto) => {
-        // Not implemented in schema (no balance tracking in schema shown), 
-        // usually this would go to a CuentaCorriente table or update a balance field.
-        // For now, we'll just log it or ignore if schema doesn't support it.
-        // Or assume there's a log. The previous API called `/clientes/{id}/pagar`.
-        // I'll leave it as a no-op or TODO since I don't have the logic for it in schema.
-        console.warn('registrarPago not fully implemented in local DB adapter');
-        return { success: true };
-    },
-
-    getPending: async () => {
+        // This is a business action, keep it somewhat manual if needed, 
+        // but for now we follow the existing no-op pattern or implement basic debt reduction.
         const database = await getDB();
-        return await database.getAllAsync('SELECT * FROM clientes WHERE synced = 0');
-    },
-
-    markSynced: async (uuids) => {
-        if (!uuids || uuids.length === 0) return;
-        const database = await getDB();
-        const placeholders = uuids.map(() => '?').join(',');
         await database.runAsync(
-            `UPDATE clientes SET synced = 1 WHERE uuid IN (${placeholders})`,
-            uuids
+            'UPDATE clientes SET deuda = deuda - ?, synced = 0 WHERE id = ?',
+            [monto, id]
         );
+        return { success: true };
     }
 };
 
