@@ -26,7 +26,7 @@ const getDB = async () => {
         global._kioskito_db_instance = null;
     }
 
-    db = await SQLite.openDatabaseAsync('kioskito_v5.db');
+    db = await SQLite.openDatabaseAsync('kioskito_v7.db');
     global._kioskito_db_instance = db;
     return db;
 };
@@ -34,19 +34,22 @@ const getDB = async () => {
 export const clearDatabase = async () => {
     const database = await getDB();
     try {
-        await database.withTransactionAsync(async () => {
-            await database.runAsync('DELETE FROM detalle_ventas');
-            await database.runAsync('DELETE FROM ventas');
-            await database.runAsync('DELETE FROM movimientos_stock');
-            await database.runAsync('DELETE FROM productos');
-            await database.runAsync('DELETE FROM clientes');
-            // Reset sequences
-            await database.runAsync('DELETE FROM sqlite_sequence');
-        });
-        return { success: true, message: 'Base de datos limpiada correctamente' };
+        // Drop tables to ensure clean schema on recreation
+        // execAsync is already atomic and handles multiple statements better outside manual transitions in some versions of expo-sqlite
+        await database.execAsync(`
+            DROP TABLE IF EXISTS detalle_ventas;
+            DROP TABLE IF EXISTS ventas;
+            DROP TABLE IF EXISTS movimientos_stock;
+            DROP TABLE IF EXISTS productos;
+            DROP TABLE IF EXISTS clientes;
+        `);
+
+        // Re-initialize after drop
+        await initDB();
+        return { success: true, message: 'Base de datos reiniciada correctamente' };
     } catch (error) {
         console.error('Error clearing database:', error);
-        return { success: false, message: 'Error al limpiar la base de datos: ' + error.message };
+        return { success: false, message: 'Error al reiniciar la base de datos: ' + error.message };
     }
 };
 
@@ -61,7 +64,8 @@ export const initDB = async () => {
                 email TEXT,
                 telefono TEXT,
                 deuda REAL DEFAULT 0,
-                synced INTEGER DEFAULT 0
+                synced INTEGER DEFAULT 0,
+                deleted INTEGER DEFAULT 0
             );
 
             CREATE TABLE IF NOT EXISTS productos (
@@ -73,7 +77,8 @@ export const initDB = async () => {
                 precio REAL NOT NULL,
                 stock INTEGER NOT NULL,
                 codigo_barra TEXT UNIQUE,
-                synced INTEGER DEFAULT 0
+                synced INTEGER DEFAULT 0,
+                deleted INTEGER DEFAULT 0
             );
 
             CREATE TABLE IF NOT EXISTS ventas (
@@ -85,6 +90,7 @@ export const initDB = async () => {
                 cliente_id INTEGER,
                 tipo TEXT DEFAULT 'VENTA',
                 synced INTEGER DEFAULT 0,
+                deleted INTEGER DEFAULT 0,
                 FOREIGN KEY (cliente_id) REFERENCES clientes(id)
             );
 
@@ -386,14 +392,54 @@ export const clientesAPI = {
     },
 
     registrarPago: async (id, monto) => {
-        // This is a business action, keep it somewhat manual if needed, 
-        // but for now we follow the existing no-op pattern or implement basic debt reduction.
         const database = await getDB();
         await database.runAsync(
             'UPDATE clientes SET deuda = deuda - ?, synced = 0 WHERE id = ?',
             [monto, id]
         );
         return { success: true };
+    },
+
+    getPending: async () => {
+        const database = await getDB();
+        return await database.getAllAsync('SELECT * FROM clientes WHERE synced = 0');
+    },
+
+    markSynced: async (uuids) => {
+        if (!uuids || uuids.length === 0) return;
+        const database = await getDB();
+        const placeholders = uuids.map(() => '?').join(',');
+        await database.runAsync(
+            `UPDATE clientes SET synced = 1 WHERE uuid IN (${placeholders})`,
+            uuids
+        );
+    },
+
+    // Bulk upsert for Sync Down
+    upsertClients: async (clients) => {
+        const database = await getDB();
+        try {
+            await database.withTransactionAsync(async () => {
+                for (const c of clients) {
+                    const row = await database.getFirstAsync('SELECT id FROM clientes WHERE uuid = ?', [c.uuid]);
+                    if (row) {
+                        await database.runAsync(
+                            'UPDATE clientes SET nombre = ?, email = ?, telefono = ?, deuda = ?, synced = 1 WHERE uuid = ?',
+                            [c.nombre, c.email, c.telefono, c.deuda, c.uuid]
+                        );
+                    } else {
+                        await database.runAsync(
+                            'INSERT INTO clientes (uuid, nombre, email, telefono, deuda, synced) VALUES (?, ?, ?, ?, ?, 1)',
+                            [c.uuid, c.nombre, c.email, c.telefono, c.deuda]
+                        );
+                    }
+                }
+            });
+            return { success: true };
+        } catch (e) {
+            console.error("Bulk upsert clients error:", e);
+            throw e;
+        }
     }
 };
 

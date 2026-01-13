@@ -4,19 +4,19 @@ export const createGenericRepository = (tableName, getDB, mapper = (x) => x) => 
     return {
         getAll: async (orderBy = 'id') => {
             const database = await getDB();
-            const rows = await database.getAllAsync(`SELECT * FROM ${tableName} ORDER BY ${orderBy}`);
+            const rows = await database.getAllAsync(`SELECT * FROM ${tableName} WHERE deleted = 0 ORDER BY ${orderBy}`);
             return rows.map(mapper);
         },
 
         getById: async (id) => {
             const database = await getDB();
-            const row = await database.getFirstAsync(`SELECT * FROM ${tableName} WHERE id = ?`, [id]);
+            const row = await database.getFirstAsync(`SELECT * FROM ${tableName} WHERE id = ? AND deleted = 0`, [id]);
             return row ? mapper(row) : null;
         },
 
         getByUuid: async (uuid) => {
             const database = await getDB();
-            const row = await database.getFirstAsync(`SELECT * FROM ${tableName} WHERE uuid = ?`, [uuid]);
+            const row = await database.getFirstAsync(`SELECT * FROM ${tableName} WHERE uuid = ? AND deleted = 0`, [uuid]);
             return row ? mapper(row) : null;
         },
 
@@ -25,7 +25,7 @@ export const createGenericRepository = (tableName, getDB, mapper = (x) => x) => 
             const uuid = item.uuid || Crypto.randomUUID();
 
             // Extract keys and values except id
-            const data = { ...item, uuid, synced: 0 };
+            const data = { ...item, uuid, synced: 0, deleted: 0 };
             delete data.id;
 
             const keys = Object.keys(data);
@@ -58,13 +58,28 @@ export const createGenericRepository = (tableName, getDB, mapper = (x) => x) => 
 
         delete: async (id) => {
             const database = await getDB();
-            await database.runAsync(`DELETE FROM ${tableName} WHERE id = ?`, [id]);
+            // Check if it's already synced
+            const row = await database.getFirstAsync(`SELECT synced FROM ${tableName} WHERE id = ?`, [id]);
+
+            if (row && row.synced === 1) {
+                // Soft delete: mark as deleted to inform server later
+                await database.runAsync(`UPDATE ${tableName} SET deleted = 1 WHERE id = ?`, [id]);
+            } else {
+                // Hard delete: not on server yet, can safely remove
+                await database.runAsync(`DELETE FROM ${tableName} WHERE id = ?`, [id]);
+            }
             return { success: true };
         },
 
         getPending: async () => {
             const database = await getDB();
-            const rows = await database.getAllAsync(`SELECT * FROM ${tableName} WHERE synced = 0`);
+            const rows = await database.getAllAsync(`SELECT * FROM ${tableName} WHERE synced = 0 AND deleted = 0`);
+            return rows.map(mapper);
+        },
+
+        getDeleted: async () => {
+            const database = await getDB();
+            const rows = await database.getAllAsync(`SELECT * FROM ${tableName} WHERE deleted = 1`);
             return rows.map(mapper);
         },
 
@@ -74,6 +89,16 @@ export const createGenericRepository = (tableName, getDB, mapper = (x) => x) => 
             const placeholders = uuids.map(() => '?').join(',');
             await database.runAsync(
                 `UPDATE ${tableName} SET synced = 1 WHERE uuid IN (${placeholders})`,
+                uuids
+            );
+        },
+
+        hardDeleteByUuids: async (uuids) => {
+            if (!uuids || uuids.length === 0) return;
+            const database = await getDB();
+            const placeholders = uuids.map(() => '?').join(',');
+            await database.runAsync(
+                `DELETE FROM ${tableName} WHERE uuid IN (${placeholders})`,
                 uuids
             );
         }

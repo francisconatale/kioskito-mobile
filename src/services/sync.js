@@ -8,14 +8,68 @@ export const syncService = {
         try {
             console.log('Starting Sync UP...');
 
-            // A. Clientes (Pending Upload)
-            // Note: We need a getPending() for clients in db.js first, but assuming we can filter or use similar logic to ventas
-            // For now, let's implement a quick check if we had `getPendingClientes` or similar.
-            // Since we don't have it yet in db.js interface, I'll add the TODO reminder to implement it fully in db.js 
-            // OR I can quickly add a `clientesAPI.getPending` to db.js now.
+            // A. Deletions (Sync deletions to server)
+            // 1. Productos Deletions
+            const deletedProductos = await LocalDB.productosAPI.getDeleted();
+            if (deletedProductos.length > 0) {
+                const processedUuids = [];
+                for (const p of deletedProductos) {
+                    try {
+                        await OnlineAPI.productosAPI.deleteByUuid(p.uuid);
+                        processedUuids.push(p.uuid);
+                    } catch (e) {
+                        console.error("Failed to delete product on server:", p.uuid, e);
+                        // If 404, server already deleted it, consider it sync'd
+                        if (e.message.includes('404')) processedUuids.push(p.uuid);
+                    }
+                }
+                if (processedUuids.length > 0) {
+                    await LocalDB.productosAPI.hardDeleteByUuids(processedUuids);
+                }
+            }
 
-            // Let's assume we added `getPending` to `clientesAPI` in `db.js`. 
-            // I will go and add that to `db.js` next.
+            // 2. Clientes Deletions
+            const deletedClientes = await LocalDB.clientesAPI.getDeleted();
+            if (deletedClientes.length > 0) {
+                const processedUuids = [];
+                for (const c of deletedClientes) {
+                    try {
+                        await OnlineAPI.clientesAPI.deleteByUuid(c.uuid);
+                        processedUuids.push(c.uuid);
+                    } catch (e) {
+                        console.error("Failed to delete client on server:", c.uuid, e);
+                        if (e.message.includes('404')) processedUuids.push(c.uuid);
+                    }
+                }
+                if (processedUuids.length > 0) {
+                    await LocalDB.clientesAPI.hardDeleteByUuids(processedUuids);
+                }
+            }
+
+            // 3. Ventas Deletions (Ventas don't have deleteByUuid yet, but typically we don't delete sales often)
+            // For now let's focus on products and clients.
+
+            // B. Productos (Pending Upload)
+            const pendingProductos = await LocalDB.productosAPI.getPending();
+            if (pendingProductos && pendingProductos.length > 0) {
+                const syncedProductUuids = [];
+                for (const producto of pendingProductos) {
+                    try {
+                        await OnlineAPI.productosAPI.create({
+                            ...producto,
+                            uuid: producto.uuid
+                        });
+                        syncedProductUuids.push(producto.uuid);
+                    } catch (e) {
+                        console.error("Failed to upload product:", producto.uuid, e);
+                    }
+                }
+                if (syncedProductUuids.length > 0) {
+                    await LocalDB.productosAPI.markSynced(syncedProductUuids);
+                }
+            }
+
+            // C. Clientes (Pending Upload)
             const pendingClientes = await LocalDB.clientesAPI.getPending();
             if (pendingClientes && pendingClientes.length > 0) {
                 const syncedClientUuids = [];
@@ -35,7 +89,7 @@ export const syncService = {
                 }
             }
 
-            // B. Ventas (Pending Upload)
+            // D. Ventas (Pending Upload)
             const pendingVentas = await LocalDB.ventasAPI.getPending();
             if (pendingVentas.length === 0) {
                 console.log('No pending sales to sync.');
@@ -66,8 +120,6 @@ export const syncService = {
                         syncedUuids.push(venta.uuid);
                     } catch (e) {
                         console.error(`Failed to upload sale ${venta.uuid}:`, e);
-                        // If 409 Conflict (already exists), we might want to mark as synced?
-                        // If 400 Bad Request (invalid client/product), we are stuck.
                     }
                 }
 
@@ -96,7 +148,14 @@ export const syncService = {
                 console.log(`Products synced from server: ${remoteProducts.length}`);
             }
 
-            console.log('Products sync finished.');
+            // B. Clientes
+            const remoteClients = await OnlineAPI.clientesAPI.getAll();
+            if (remoteClients && remoteClients.length > 0) {
+                await LocalDB.clientesAPI.upsertClients(remoteClients);
+                console.log(`Clients synced from server: ${remoteClients.length}`);
+            }
+
+            console.log('Sync Down finished.');
             return { success: true };
         } catch (error) {
             console.error('Sync Down Error:', error);
@@ -111,5 +170,20 @@ export const syncService = {
         const downResult = await syncService.syncDown();
         console.log('=== SYNC COMPLETED ===');
         return { up: upResult, down: downResult };
+    },
+
+    // 4. Force Sync (Clear local and fetch fresh)
+    forceSync: async () => {
+        console.log('=== FORCE SYNC STARTED ===');
+        // A. Try to upload what's pending so we don't lose data
+        await syncService.syncUp();
+
+        // B. Clear local DB
+        await LocalDB.clearDatabase();
+
+        // C. Fetch all fresh
+        const result = await syncService.syncDown();
+        console.log('=== FORCE SYNC COMPLETED ===');
+        return result;
     }
 };

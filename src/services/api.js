@@ -16,7 +16,6 @@ export const apiRequest = async (endpoint, options = {}) => {
             ...options.headers,
         }
 
-        // Add Authorization header if token exists
         if (token) {
             headers['Authorization'] = `Bearer ${token}`
         }
@@ -157,6 +156,13 @@ export const productosAPI = {
         })
     },
 
+    // DELETE /api/productos/uuid/{uuid}
+    deleteByUuid: async (uuid) => {
+        return await apiRequest(`/productos/uuid/${uuid}`, {
+            method: 'DELETE',
+        })
+    },
+
     // GET /api/productos/codigo-barra/{codigoBarra}
     getByBarcode: async (codigoBarra) => {
         const producto = await apiRequest(`/productos/codigo-barra/${codigoBarra}`)
@@ -268,6 +274,13 @@ export const clientesAPI = {
     // DELETE /api/clientes/{id}
     delete: async (id) => {
         return await apiRequest(`/clientes/${id}`, {
+            method: 'DELETE',
+        })
+    },
+
+    // DELETE /api/clientes/uuid/{uuid}
+    deleteByUuid: async (uuid) => {
+        return await apiRequest(`/clientes/uuid/${uuid}`, {
             method: 'DELETE',
         })
     },

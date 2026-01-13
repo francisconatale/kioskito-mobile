@@ -1,55 +1,34 @@
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert } from "react-native"
 import { Ionicons } from '@expo/vector-icons'
-import { exportData, importData } from '../services/backup'
 import { syncService } from '../services/sync'
 
 export const Menu = ({ onNavigate, appMode, onRefresh, onToggleMode, user, onLogout }) => {
 
-    const handleBackup = async () => {
-        if (appMode === 'ONLINE') {
-            alert("El backup local solo es necesario en modo Offline. En Online tus datos ya están seguros.");
-            return;
-        }
-        const result = await exportData();
-        if (result.success) {
-            alert(result.message || "Copia de seguridad guardada exitosamente");
-        } else {
-            alert("Error: " + result.message);
-        }
-    }
-
-    const handleRestore = async () => {
-        if (appMode === 'ONLINE') return;
-        const result = await importData();
-        alert(result.message);
-        if (result.success && onRefresh) onRefresh();
-    }
-
-    const handleClearDB = async () => {
-        if (appMode === 'ONLINE') {
-            Alert.alert("Acción no permitida", "Esta opción solo está disponible para limpiar la base de datos local (Offline).");
-            return;
-        }
-
+    const handleForceSync = async () => {
         Alert.alert(
-            "¿Borrar TODOS los datos?",
-            "Esta acción eliminará permanentemente todos los productos, ventas y clientes almacenados en este dispositivo. No se puede deshacer.\n\nSe recomienda hacer un Backup antes.",
+            "Forzar sincronización",
+            "Esta acción intentará subir tus cambios pendientes, luego borrará la base de datos local y descargará todo de nuevo desde la nube. \n\n¿Deseas continuar?",
             [
                 { text: "Cancelar", style: "cancel" },
                 {
-                    text: "Sí, Borrar Todo",
-                    style: "destructive",
+                    text: "Sincronizar",
                     onPress: async () => {
-                        const { clearDatabase } = require('../services/db');
-                        const result = await clearDatabase();
-                        alert(result.message);
-                        if (result.success && onRefresh) onRefresh();
+                        try {
+                            const result = await syncService.forceSync();
+                            if (result.success) {
+                                Alert.alert("Éxito", "La base de datos se ha sincronizado correctamente.");
+                                if (onRefresh) onRefresh();
+                            } else {
+                                Alert.alert("Error", "Hubo un problema al sincronizar.");
+                            }
+                        } catch (e) {
+                            Alert.alert("Error", "Error inesperado: " + e.message);
+                        }
                     }
                 }
             ]
         );
     }
-
 
     // Menu items configuration
     const menuItems = [
@@ -77,6 +56,14 @@ export const Menu = ({ onNavigate, appMode, onRefresh, onToggleMode, user, onLog
     ];
 
     const settingsItems = [
+        {
+            id: 'sync',
+            label: 'Sincronizar base de datos',
+            subtitle: 'Actualizar productos y clientes desde la nube',
+            icon: 'sync-outline',
+            color: '#10B981',
+            action: handleForceSync
+        },
         {
             id: 'mode',
             label: 'Modo de almacenamiento',
@@ -108,30 +95,6 @@ export const Menu = ({ onNavigate, appMode, onRefresh, onToggleMode, user, onLog
 
                 onToggleMode();
             }
-        },
-        {
-            id: 'backup',
-            label: 'Realizar copia de seguridad',
-            subtitle: 'Exportar datos a un archivo',
-            icon: 'save-outline',
-            color: '#8B5CF6',
-            action: handleBackup
-        },
-        {
-            id: 'restore',
-            label: 'Restaurar copia de seguridad',
-            subtitle: 'Importar datos desde un archivo',
-            icon: 'cloud-upload-outline',
-            color: '#10B981',
-            action: handleRestore
-        },
-        {
-            id: 'reset_db',
-            label: 'Restablecer base de datos',
-            subtitle: 'Borrar todos los datos locales',
-            icon: 'trash-outline',
-            color: '#EF4444',
-            action: handleClearDB
         }
     ]
 
