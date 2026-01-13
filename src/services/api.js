@@ -2,6 +2,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const API_BASE_URL = 'https://kioskito-api-1.onrender.com/api'
 
+let onUnauthorizedListener = null;
+
+export const setOnUnauthorizedListener = (listener) => {
+    onUnauthorizedListener = listener;
+};
+
 // Generic API request handler
 export const apiRequest = async (endpoint, options = {}) => {
     try {
@@ -44,12 +50,9 @@ export const apiRequest = async (endpoint, options = {}) => {
             const errorMsg = responseData?.message || `HTTP ${status}: ${response.statusText}`
 
             if (status === 403 || status === 401) {
-                console.warn(`Auth Error (${status}): Session may be invalid. Clearing local session...`)
-                try {
-                    await AsyncStorage.removeItem('user_session')
-                    await AsyncStorage.removeItem('auth_token')
-                } catch (e) {
-                    console.error('Failed to clear session after auth error:', e)
+                console.warn(`Auth Error (${status}): Session may be invalid. Triggering logout...`)
+                if (onUnauthorizedListener) {
+                    onUnauthorizedListener();
                 }
             }
             throw new Error(errorMsg)

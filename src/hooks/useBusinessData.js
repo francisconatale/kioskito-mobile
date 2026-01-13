@@ -30,6 +30,21 @@ export const useBusinessData = (user) => {
             }
         }
         init()
+
+        // Auto-switch to OFFLINE if internet is lost
+        const NetInfo = require('@react-native-community/netinfo');
+        const unsubscribe = NetInfo.addEventListener(state => {
+            if (state.isConnected === false) {
+                const currentMode = getMode();
+                if (currentMode === 'ONLINE') {
+                    console.log("Internet connection lost. Switching to OFFLINE mode automatically.");
+                    setMode('OFFLINE');
+                    setAppMode('OFFLINE');
+                }
+            }
+        });
+
+        return () => unsubscribe();
     }, [])
 
     const toggleAppMode = async () => {

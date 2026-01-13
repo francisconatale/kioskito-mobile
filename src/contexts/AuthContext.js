@@ -11,6 +11,12 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         checkSession();
+        // Register logout listener for API
+        const { setOnUnauthorizedListener } = require('../services/api');
+        setOnUnauthorizedListener(() => {
+            console.log("Automatic logout triggered by API error");
+            logout();
+        });
     }, []);
 
     const checkSession = async () => {
