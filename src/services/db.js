@@ -485,5 +485,33 @@ export const movimientosStockAPI = {
         } catch (e) {
             throw e;
         }
+    },
+
+    getPending: async () => {
+        const database = await getDB();
+        const rows = await database.getAllAsync(`
+            SELECT m.*, p.uuid as producto_uuid 
+            FROM movimientos_stock m
+            JOIN productos p ON m.producto_id = p.id
+            WHERE m.synced = 0
+        `);
+        return rows.map(r => ({
+            uuid: r.uuid,
+            productoUuid: r.producto_uuid,
+            tipo: r.tipo,
+            cantidad: r.cantidad,
+            motivo: r.motivo,
+            fecha: r.fecha
+        }));
+    },
+
+    markSynced: async (uuids) => {
+        if (!uuids || uuids.length === 0) return;
+        const database = await getDB();
+        const placeholders = uuids.map(() => '?').join(',');
+        await database.runAsync(
+            `UPDATE movimientos_stock SET synced = 1 WHERE uuid IN (${placeholders})`,
+            uuids
+        );
     }
 };

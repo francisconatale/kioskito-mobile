@@ -129,6 +129,24 @@ export const syncService = {
                 }
             }
 
+            // E. Movimientos Stock (Pending Upload)
+            const pendingMovimientos = await LocalDB.movimientosStockAPI.getPending();
+            if (pendingMovimientos && pendingMovimientos.length > 0) {
+                console.log(`Found ${pendingMovimientos.length} pending stock movements.`);
+                const syncedMovUuids = [];
+                for (const mov of pendingMovimientos) {
+                    try {
+                        await OnlineAPI.movimientosStockAPI.create(mov);
+                        syncedMovUuids.push(mov.uuid);
+                    } catch (e) {
+                        console.error("Failed to upload stock movement:", mov.uuid, e);
+                    }
+                }
+                if (syncedMovUuids.length > 0) {
+                    await LocalDB.movimientosStockAPI.markSynced(syncedMovUuids);
+                }
+            }
+
             return { success: true };
         } catch (error) {
             console.error('Sync Up Error:', error);
