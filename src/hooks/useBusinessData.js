@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { productosAPI, ventasAPI, clientesAPI, movimientosStockAPI, setMode, getMode, initService } from "../services/factory"
 import { syncService } from "../services/sync"
 import { Alert } from "react-native"
@@ -17,6 +17,7 @@ export const useBusinessData = (user) => {
     const [movements, setMovements] = useState([])
 
     const [appMode, setAppMode] = useState('OFFLINE')
+    const syncingRef = useRef(false)
 
     useEffect(() => {
         const init = async () => {
@@ -32,23 +33,28 @@ export const useBusinessData = (user) => {
     }, [])
 
     const toggleAppMode = async () => {
-        const newMode = appMode === 'ONLINE' ? 'OFFLINE' : 'ONLINE'
+        if (syncingRef.current) {
+            console.log("Sync already in progress, skipping toggle...")
+            return appMode
+        }
 
+        const newMode = appMode === 'ONLINE' ? 'OFFLINE' : 'ONLINE'
+        console.log(`Switching mode to ${newMode}...`)
+
+        syncingRef.current = true
         setLoading(true)
         try {
             // Before switching, we attempt to sync everything
-            // This ensures Online -> Offline gets latest data
-            // and Offline -> Online uploads pending sales
             await syncService.syncAll()
         } catch (e) {
             console.warn("Auto-sync failed during mode toggle:", e)
-            // We continue anyway so the user can switch mode
         }
 
         await setMode(newMode)
         setAppMode(newMode)
         await fetchData()
         setLoading(false)
+        syncingRef.current = false
         return newMode
     }
 

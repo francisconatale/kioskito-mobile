@@ -196,11 +196,29 @@ export const productosAPI = {
         return rows.map(mapProductoFromDB);
     },
 
-    // Bulk upsert for Sync Down
+    // Bulk upsert for Sync Down with cleanup
     upsertProducts: async (products) => {
         const database = await getDB();
         try {
             await database.withTransactionAsync(async () => {
+                const cloudUuids = products.map(p => p.uuid);
+
+                const localSyncedProducts = await database.getAllAsync(
+                    'SELECT uuid FROM productos WHERE synced = 1'
+                );
+
+                const localUuids = localSyncedProducts.map(p => p.uuid);
+                const uuidsToDelete = localUuids.filter(uuid => !cloudUuids.includes(uuid));
+
+                if (uuidsToDelete.length > 0) {
+                    const placeholders = uuidsToDelete.map(() => '?').join(',');
+                    await database.runAsync(
+                        `DELETE FROM productos WHERE uuid IN (${placeholders})`,
+                        uuidsToDelete
+                    );
+                    console.log(`Deleted ${uuidsToDelete.length} products no longer in cloud`);
+                }
+
                 for (const p of products) {
                     const row = await database.getFirstAsync('SELECT id FROM productos WHERE uuid = ?', [p.uuid]);
                     const codigoBarra = p.codigoBarras || p.codigoBarra;
@@ -208,13 +226,13 @@ export const productosAPI = {
                     if (row) {
                         // Update
                         await database.runAsync(
-                            'UPDATE productos SET nombre = ?, marca = ?, descripcion = ?, precio = ?, stock = ?, codigo_barra = ?, synced = 1 WHERE uuid = ?',
+                            'UPDATE productos SET nombre = ?, marca = ?, descripcion = ?, precio = ?, stock = ?, codigo_barra = ?, synced = 1, deleted = 0 WHERE uuid = ?',
                             [p.nombre, p.marca, p.descripcion, p.precio, p.stock, codigoBarra, p.uuid]
                         );
                     } else {
                         // Insert
                         await database.runAsync(
-                            'INSERT INTO productos (uuid, nombre, marca, descripcion, precio, stock, codigo_barra, synced) VALUES (?, ?, ?, ?, ?, ?, ?, 1)',
+                            'INSERT INTO productos (uuid, nombre, marca, descripcion, precio, stock, codigo_barra, synced, deleted) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0)',
                             [p.uuid, p.nombre, p.marca, p.descripcion, p.precio, p.stock, codigoBarra]
                         );
                     }
@@ -415,21 +433,44 @@ export const clientesAPI = {
         );
     },
 
-    // Bulk upsert for Sync Down
+    // Bulk upsert for Sync Down with cleanup
     upsertClients: async (clients) => {
         const database = await getDB();
         try {
             await database.withTransactionAsync(async () => {
+                // Get all cloud UUIDs
+                const cloudUuids = clients.map(c => c.uuid);
+
+                // Get all local clients that are synced (came from cloud originally)
+                const localSyncedClients = await database.getAllAsync(
+                    'SELECT uuid FROM clientes WHERE synced = 1'
+                );
+
+                // Find clients to delete (exist locally but not in cloud)
+                const localUuids = localSyncedClients.map(c => c.uuid);
+                const uuidsToDelete = localUuids.filter(uuid => !cloudUuids.includes(uuid));
+
+                // Delete clients that no longer exist in cloud
+                if (uuidsToDelete.length > 0) {
+                    const placeholders = uuidsToDelete.map(() => '?').join(',');
+                    await database.runAsync(
+                        `DELETE FROM clientes WHERE uuid IN (${placeholders})`,
+                        uuidsToDelete
+                    );
+                    console.log(`Deleted ${uuidsToDelete.length} clients no longer in cloud`);
+                }
+
+                // Now upsert the clients from cloud
                 for (const c of clients) {
                     const row = await database.getFirstAsync('SELECT id FROM clientes WHERE uuid = ?', [c.uuid]);
                     if (row) {
                         await database.runAsync(
-                            'UPDATE clientes SET nombre = ?, email = ?, telefono = ?, deuda = ?, synced = 1 WHERE uuid = ?',
+                            'UPDATE clientes SET nombre = ?, email = ?, telefono = ?, deuda = ?, synced = 1, deleted = 0 WHERE uuid = ?',
                             [c.nombre, c.email, c.telefono, c.deuda, c.uuid]
                         );
                     } else {
                         await database.runAsync(
-                            'INSERT INTO clientes (uuid, nombre, email, telefono, deuda, synced) VALUES (?, ?, ?, ?, ?, 1)',
+                            'INSERT INTO clientes (uuid, nombre, email, telefono, deuda, synced, deleted) VALUES (?, ?, ?, ?, ?, 1, 0)',
                             [c.uuid, c.nombre, c.email, c.telefono, c.deuda]
                         );
                     }

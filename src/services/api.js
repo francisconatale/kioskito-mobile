@@ -30,15 +30,34 @@ export const apiRequest = async (endpoint, options = {}) => {
             return null
         }
 
-        // Handle errors
-        if (!response.ok) {
-            const error = await response.json()
-            throw new Error(error.message || `HTTP ${response.status}: ${response.statusText}`)
+        const responseText = await response.text()
+        let responseData = null
+        try {
+            responseData = responseText ? JSON.parse(responseText) : null
+        } catch (e) {
+            console.warn(`Failed to parse JSON for ${endpoint}:`, e.message)
         }
 
-        return await response.json()
+        // Handle errors
+        if (!response.ok) {
+            const status = response.status
+            const errorMsg = responseData?.message || `HTTP ${status}: ${response.statusText}`
+
+            if (status === 403 || status === 401) {
+                console.warn(`Auth Error (${status}): Session may be invalid. Clearing local session...`)
+                try {
+                    await AsyncStorage.removeItem('user_session')
+                    await AsyncStorage.removeItem('auth_token')
+                } catch (e) {
+                    console.error('Failed to clear session after auth error:', e)
+                }
+            }
+            throw new Error(errorMsg)
+        }
+
+        return responseData
     } catch (error) {
-        console.error('API Error:', error)
+        console.error('API Error:', error.message)
         throw error
     }
 }

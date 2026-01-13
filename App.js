@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import * as SplashScreen from 'expo-splash-screen'
 import { View, Text, SafeAreaView, Platform, StatusBar, Image, Animated } from "react-native"
 import { Dashboard } from "./src/components/Dashboard"
