@@ -301,7 +301,7 @@ export const SaleDetailsModal = ({ visible, onClose, sale, onReturn }) => {
                         <View style={{ paddingVertical: 20 }}>
                             <SuccessScreen
                                 title="¡Devolución Exitosa!"
-                                message={`Se han devuelto los productos y se ha ajustado el monto de la venta original.`}
+                                message={`Se han devuelto ${Object.values(returnQuantities).reduce((a, b) => a + b, 0)} productos y se ha ajustado la venta original.`}
                                 primaryButtonText="Entendido"
                                 onPrimaryAction={onClose}
                                 icon="refresh"

@@ -376,8 +376,7 @@ const MainAppContent = () => {
         }}
         sale={selectedSale}
         onReturn={async (sale) => {
-          const result = await handleReturnSale(sale)
-          showToast(result.message, result.success ? "success" : "error")
+          return await handleReturnSale(sale)
         }}
       />
 
