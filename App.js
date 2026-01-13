@@ -374,6 +374,10 @@ const MainAppContent = () => {
           setSelectedSale(null)
         }}
         sale={selectedSale}
+        onReturn={async (sale) => {
+          const result = await handleReturnSale(sale)
+          showToast(result.message, result.success ? "success" : "error")
+        }}
       />
 
       <BarcodeScanner

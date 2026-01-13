@@ -93,6 +93,7 @@ const mapVentaFromBackend = (venta) => {
         date: v.fecha,
         items: (v.detalles || []).map(d => ({
             productId: d.productoId,
+            productUuid: d.productoUuid,
             productName: d.productoNombre,
             productoMarca: d.productoMarca,
             productoDescripcion: d.productoDescripcion,

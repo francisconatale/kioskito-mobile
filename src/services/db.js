@@ -233,13 +233,10 @@ export const productosAPI = {
                     const row = await database.getFirstAsync('SELECT id FROM productos WHERE uuid = ?', [p.uuid]);
                     const codigoBarra = p.codigoBarras || p.codigoBarra;
 
-                    // Calculate pending local adjustments for this product
-                    // (Movements that exist locally but haven't been synced to cloud yet)
                     const pendingAdjustments = await movimientosStockAPI.getPendingAdjustmentForProduct(p.uuid);
                     const localStock = p.stock + pendingAdjustments;
 
                     if (row) {
-                        // Update - Preserve local adjustments
                         await database.runAsync(
                             'UPDATE productos SET nombre = ?, marca = ?, descripcion = ?, precio = ?, stock = ?, codigo_barra = ?, synced = 1, deleted = 0 WHERE uuid = ?',
                             [p.nombre, p.marca, p.descripcion, p.precio, localStock, codigoBarra, p.uuid]
@@ -266,8 +263,6 @@ export const ventasAPI = {
         const database = await getDB();
         const ventas = await database.getAllAsync('SELECT * FROM ventas ORDER BY fecha DESC');
 
-        // This is N+1 but efficient enough for local sqlite usually. 
-        // Can be optimized with a single JOIN query grouping results.
         const ventasWithDetails = await Promise.all(ventas.map(async (v) => {
             const detalles = await database.getAllAsync(`
                 SELECT dv.*, p.nombre as nombre_producto, p.marca as marca_producto, p.descripcion as descripcion_producto 
@@ -299,25 +294,35 @@ export const ventasAPI = {
                         [ventaId, detalle.productoId, detalle.cantidad, detalle.precioUnitario, subtotal]
                     );
 
+                    const operator = venta.tipo === 'DEVOLUCION' ? '+' : '-';
                     await database.runAsync(
-                        'UPDATE productos SET stock = stock - ? WHERE id = ?',
+                        `UPDATE productos SET stock = stock ${operator} ? WHERE id = ?`,
                         [detalle.cantidad, detalle.productoId]
                     );
 
                     // Record movement
                     const movUuid = Crypto.randomUUID();
+                    const movTipo = venta.tipo === 'DEVOLUCION' ? 'ENTRADA' : 'SALIDA';
+                    const movMotivo = venta.tipo === 'DEVOLUCION' ? 'DEVOLUCION' : 'VENTA';
                     await database.runAsync(
                         'INSERT INTO movimientos_stock (uuid, producto_id, tipo, cantidad, motivo, fecha, synced) VALUES (?, ?, ?, ?, ?, ?, 0)',
-                        [movUuid, detalle.productoId, 'SALIDA', detalle.cantidad, 'VENTA', venta.fecha]
+                        [movUuid, detalle.productoId, movTipo, detalle.cantidad, movMotivo, venta.fecha]
                     );
                 }
 
-                // Handle debt update if FIADO
-                if (venta.metodoPago && venta.metodoPago.toUpperCase() === 'FIADO' && venta.clienteId) {
-                    await database.runAsync(
-                        'UPDATE clientes SET deuda = deuda + ?, synced = 0 WHERE id = ?',
-                        [venta.montoTotal, venta.clienteId]
-                    );
+                // Handle debt update if FIADO or DEVOLUCION
+                if (venta.clienteId) {
+                    if (venta.metodoPago && venta.metodoPago.toUpperCase() === 'FIADO' && venta.tipo !== 'DEVOLUCION') {
+                        await database.runAsync(
+                            'UPDATE clientes SET deuda = deuda + ?, synced = 0 WHERE id = ?',
+                            [venta.montoTotal, venta.clienteId]
+                        );
+                    } else if (venta.tipo === 'DEVOLUCION') {
+                        await database.runAsync(
+                            'UPDATE clientes SET deuda = deuda - ?, synced = 0 WHERE id = ?',
+                            [venta.montoTotal, venta.clienteId]
+                        );
+                    }
                 }
                 return { id: ventaId, ...venta, uuid, synced: 0 };
             });
@@ -556,7 +561,7 @@ export const movimientosStockAPI = {
                 );
 
                 const operator = mov.tipo === 'ENTRADA' ? '+' : '-';
-                // Also mark product as unsynced (stock changed)
+
                 await database.runAsync(
                     `UPDATE productos SET stock = stock ${operator} ?, synced = 0 WHERE id = ?`,
                     [mov.cantidad, mov.productoId]

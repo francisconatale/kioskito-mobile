@@ -31,7 +31,6 @@ export const useBusinessData = (user) => {
         }
         init()
 
-        // Auto-switch to OFFLINE if internet is lost
         const NetInfo = require('@react-native-community/netinfo');
         const unsubscribe = NetInfo.addEventListener(state => {
             if (state.isConnected === false) {
@@ -59,7 +58,6 @@ export const useBusinessData = (user) => {
         syncingRef.current = true
         setLoading(true)
         try {
-            // Before switching, we attempt to sync everything
             await syncService.syncAll()
         } catch (e) {
             console.warn("Auto-sync failed during mode toggle:", e)
@@ -471,10 +469,38 @@ export const useBusinessData = (user) => {
         try {
             setLoading(true)
             await clientesAPI.registrarPago(clienteId, monto)
-            await Promise.all([fetchClients(), fetchSales()])
+            await Promise.all([fetchClients(), fetchSales(), fetchMovements()])
             return { success: true, message: "Pago registrado correctamente" }
         } catch (err) {
             console.error("Error al registrar pago:", err)
+            return { success: false, message: `Error: ${err.message}` }
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleReturnSale = async (originalSale) => {
+        try {
+            setLoading(true)
+            const returnRequest = {
+                fecha: new Date().toISOString(),
+                montoTotal: originalSale.total,
+                metodoPago: originalSale.metodoPago || 'EFECTIVO',
+                clienteId: originalSale.clienteId,
+                usuarioId: user?.id,
+                tipo: 'DEVOLUCION',
+                detalles: originalSale.items.map(item => ({
+                    productoId: item.productId,
+                    productoUuid: item.productoUuid,
+                    cantidad: item.quantity,
+                    precioUnitario: item.price
+                }))
+            }
+            await ventasAPI.create(returnRequest)
+            await Promise.all([fetchSales(), fetchProducts(), fetchClients(), fetchMovements()])
+            return { success: true, message: "Devolución registrada correctamente" }
+        } catch (err) {
+            console.error("Error al registrar devolución:", err)
             return { success: false, message: `Error: ${err.message}` }
         } finally {
             setLoading(false)
@@ -491,6 +517,7 @@ export const useBusinessData = (user) => {
         fetchData,
         fetchProducts,
         fetchSales,
+        handleReturnSale,
         handleAddProduct,
         handleUpdateProduct,
         handleDeleteProduct,

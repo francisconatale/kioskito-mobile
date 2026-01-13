@@ -151,9 +151,21 @@ export const RestockModal = ({
                                                 >
                                                     <Ionicons name="remove" size={18} color="#374151" />
                                                 </TouchableOpacity>
-                                                <Text style={{ marginHorizontal: 12, fontSize: 15, fontWeight: '600', color: '#111827', minWidth: 20, textAlign: 'center', fontFamily: 'System' }}>
-                                                    {newItem.quantity}
-                                                </Text>
+                                                <TextInput
+                                                    style={{
+                                                        marginHorizontal: 4,
+                                                        fontSize: 16,
+                                                        fontWeight: '700',
+                                                        color: '#111827',
+                                                        minWidth: 40,
+                                                        textAlign: 'center',
+                                                        fontFamily: 'System',
+                                                        paddingVertical: 4
+                                                    }}
+                                                    keyboardType="numeric"
+                                                    value={newItem.quantity}
+                                                    onChangeText={(text) => setNewItem({ ...newItem, quantity: text.replace(/[^0-9]/g, '') })}
+                                                />
                                                 <TouchableOpacity
                                                     onPress={() => {
                                                         const current = parseInt(newItem.quantity) || 0
