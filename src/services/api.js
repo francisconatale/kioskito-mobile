@@ -140,15 +140,34 @@ export const productosAPI = {
             nombre: producto.nombre,
             descripcion: producto.descripcion,
             precio: producto.precio,
-            stock: producto.stock,
-            codigoBarra: producto.codigoBarras, // Spring Boot Jackson format
+            stock: 0, // Force 0 on creation, use movement for initial stock
+            codigoBarra: producto.codigoBarras,
             marca: producto.marca,
         }
 
-        return await apiRequest('/productos', {
+        const createdProduct = await apiRequest('/productos', {
             method: 'POST',
             body: JSON.stringify(backendProducto),
         })
+
+        // If there's initial stock, create a movement
+        if (producto.stock > 0 && createdProduct) {
+            try {
+                await movimientosStockAPI.create({
+                    productoId: createdProduct.id,
+                    tipo: 'ENTRADA',
+                    cantidad: producto.stock,
+                    motivo: 'Stock Inicial',
+                    fecha: new Date().toISOString()
+                })
+                // Update the returned object to reflect the stock for the UI
+                createdProduct.stock = producto.stock
+            } catch (e) {
+                console.error("Failed to create initial stock movement online:", e)
+            }
+        }
+
+        return createdProduct
     },
 
     // PUT /api/productos/{id}

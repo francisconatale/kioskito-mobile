@@ -233,14 +233,19 @@ export const productosAPI = {
                     const row = await database.getFirstAsync('SELECT id FROM productos WHERE uuid = ?', [p.uuid]);
                     const codigoBarra = p.codigoBarras || p.codigoBarra;
 
+                    // Calculate pending local adjustments for this product
+                    // (Movements that exist locally but haven't been synced to cloud yet)
+                    const pendingAdjustments = await movimientosStockAPI.getPendingAdjustmentForProduct(p.uuid);
+                    const localStock = p.stock + pendingAdjustments;
+
                     if (row) {
-                        // Update
+                        // Update - Preserve local adjustments
                         await database.runAsync(
                             'UPDATE productos SET nombre = ?, marca = ?, descripcion = ?, precio = ?, stock = ?, codigo_barra = ?, synced = 1, deleted = 0 WHERE uuid = ?',
-                            [p.nombre, p.marca, p.descripcion, p.precio, p.stock, codigoBarra, p.uuid]
+                            [p.nombre, p.marca, p.descripcion, p.precio, localStock, codigoBarra, p.uuid]
                         );
                     } else {
-                        // Insert
+                        // Insert - For new products, stock is just the cloud stock
                         await database.runAsync(
                             'INSERT INTO productos (uuid, nombre, marca, descripcion, precio, stock, codigo_barra, synced, deleted) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0)',
                             [p.uuid, p.nombre, p.marca, p.descripcion, p.precio, p.stock, codigoBarra]

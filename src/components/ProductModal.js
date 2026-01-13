@@ -72,17 +72,18 @@ export const ProductModal = ({ visible, onClose, onAddProduct, onUpdateProduct, 
         setSaving(true)
         try {
             const stockToSet = parseInt(newProduct.stock) || 0
-            const productUpdate = { ...savedProduct, stock: stockToSet }
-
-            // We reuse onUpdateProduct
-            const result = await onUpdateProduct(savedProduct.id, productUpdate)
-
-            if (result.success) {
-                // Fully done
-                handleClose()
-            } else {
-                setError(result.message)
+            if (stockToSet > 0) {
+                const { movimientosStockAPI } = require('../services/factory')
+                await movimientosStockAPI.create({
+                    productoId: savedProduct.id,
+                    tipo: 'ENTRADA',
+                    cantidad: stockToSet,
+                    motivo: 'Stock Inicial',
+                    fecha: new Date().toISOString()
+                })
             }
+            // Fully done
+            handleClose()
         } catch (err) {
             setError("Error al actualizar stock: " + err.message)
         } finally {
