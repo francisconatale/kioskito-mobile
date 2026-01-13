@@ -400,14 +400,21 @@ export const useBusinessData = (user) => {
         setRestockCart(restockCart.filter(item => item.productId !== productId))
     }
 
-    const handleCompleteRestock = async () => {
-        if (restockCart.length === 0) return { success: false, message: "No hay items" }
+    const handleCompleteRestock = async (productId = null, quantity = null) => {
+        // Support for single item restock (manual design) or cart restock
+        let itemsToProcess = []
+        if (productId && quantity) {
+            itemsToProcess = [{ productId, quantity }]
+        } else {
+            itemsToProcess = restockCart
+        }
+
+        if (itemsToProcess.length === 0) return { success: false, message: "No hay items para ingresar" }
 
         try {
             setLoading(true)
 
-            // Create a movement for each item in the restock cart
-            const promises = restockCart.map(item => {
+            const promises = itemsToProcess.map(item => {
                 const movRequest = {
                     productoId: item.productId,
                     tipo: 'ENTRADA',
@@ -422,7 +429,7 @@ export const useBusinessData = (user) => {
             await Promise.all([fetchMovements(), fetchProducts()])
 
             setRestockCart([])
-            return { success: true, message: "Restock completado correctamente" }
+            return { success: true, message: "Stock actualizado correctamente" }
         } catch (err) {
             console.error("Error al completar restock:", err)
             return { success: false, message: err.message }
@@ -489,6 +496,7 @@ export const useBusinessData = (user) => {
                 clienteId: originalSale.clienteId,
                 usuarioId: user?.id,
                 tipo: 'DEVOLUCION',
+                ventaOriginalId: originalSale.id, // Referencia para actualizar la venta original
                 detalles: originalSale.items.map(item => ({
                     productoId: item.productId,
                     productoUuid: item.productoUuid,

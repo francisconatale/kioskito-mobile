@@ -300,7 +300,6 @@ export const ventasAPI = {
                         [detalle.cantidad, detalle.productoId]
                     );
 
-                    // Record movement
                     const movUuid = Crypto.randomUUID();
                     const movTipo = venta.tipo === 'DEVOLUCION' ? 'ENTRADA' : 'SALIDA';
                     const movMotivo = venta.tipo === 'DEVOLUCION' ? 'DEVOLUCION' : 'VENTA';
@@ -324,6 +323,39 @@ export const ventasAPI = {
                         );
                     }
                 }
+
+                if (venta.tipo === 'DEVOLUCION' && venta.ventaOriginalId) {
+                    for (const detalle of venta.detalles) {
+                        await database.runAsync(
+                            'UPDATE detalle_ventas SET cantidad = cantidad - ?, subtotal = subtotal - (? * precio_unitario) WHERE venta_id = ? AND producto_id = ?',
+                            [detalle.cantidad, detalle.cantidad, venta.ventaOriginalId, detalle.productoId]
+                        );
+                    }
+
+                    // 1. Delete details that reached 0 quantity
+                    await database.runAsync(
+                        'DELETE FROM detalle_ventas WHERE venta_id = ? AND cantidad <= 0',
+                        [venta.ventaOriginalId]
+                    );
+
+                    // 2. Check if the sale still has any items
+                    const result = await database.getFirstAsync(
+                        'SELECT COUNT(*) as count FROM detalle_ventas WHERE venta_id = ?',
+                        [venta.ventaOriginalId]
+                    );
+
+                    if (result && result.count === 0) {
+                        // If no items left, delete the entire sale
+                        await database.runAsync('DELETE FROM ventas WHERE id = ?', [venta.ventaOriginalId]);
+                    } else {
+                        // If items remain, update total and mark as unsynced
+                        await database.runAsync(
+                            'UPDATE ventas SET monto_total = monto_total - ?, synced = 0 WHERE id = ?',
+                            [venta.montoTotal, venta.ventaOriginalId]
+                        );
+                    }
+                }
+
                 return { id: ventaId, ...venta, uuid, synced: 0 };
             });
         } catch (error) {

@@ -1,21 +1,26 @@
 import React, { useState, useEffect } from "react"
-import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput } from "react-native"
+import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, ActivityIndicator } from "react-native"
 import { Ionicons, Feather } from '@expo/vector-icons'
+import { SuccessScreen } from './SuccessScreen'
 
 export const SaleDetailsModal = ({ visible, onClose, sale, onReturn }) => {
     const [returnMode, setReturnMode] = useState(false)
     const [returnQuantities, setReturnQuantities] = useState({}) // { index: qty }
+    const [processing, setProcessing] = useState(false)
+    const [completed, setCompleted] = useState(false)
 
     useEffect(() => {
         if (visible) {
             setReturnMode(false)
             setReturnQuantities({})
+            setCompleted(false)
+            setProcessing(false)
         }
     }, [visible])
 
     if (!sale) return null
 
-    const handleReturn = () => {
+    const handleReturn = async () => {
         if (!onReturn) return
 
         const returnItems = sale.items.map((item, index) => ({
@@ -25,14 +30,26 @@ export const SaleDetailsModal = ({ visible, onClose, sale, onReturn }) => {
 
         if (returnItems.length === 0) return
 
-        const totalToReturn = returnItems.reduce((acc, item) => acc + (item.quantity * item.price), 0)
+        setProcessing(true)
+        try {
+            const totalToReturn = returnItems.reduce((acc, item) => acc + (item.quantity * item.price), 0)
 
-        onReturn({
-            ...sale,
-            items: returnItems,
-            total: totalToReturn
-        })
-        onClose()
+            const result = await onReturn({
+                ...sale,
+                items: returnItems,
+                total: totalToReturn
+            })
+
+            if (result && result.success) {
+                setCompleted(true)
+            } else {
+                // Keep modal open or show error
+                setProcessing(false)
+            }
+        } catch (error) {
+            console.error("Error in return:", error)
+            setProcessing(false)
+        }
     }
 
     const updateReturnQty = (index, delta, max) => {
@@ -76,72 +93,69 @@ export const SaleDetailsModal = ({ visible, onClose, sale, onReturn }) => {
                         </TouchableOpacity>
                     </View>
 
-                    <ScrollView style={{ flex: 1 }}>
-                        <View style={{ marginBottom: 20, padding: 16, backgroundColor: returnMode ? '#FEF2F2' : '#f9fafb', borderRadius: 12, borderWidth: returnMode ? 1 : 0, borderColor: '#FCA5A5' }}>
-                            {returnMode ? (
-                                <View>
-                                    <Text style={{ fontSize: 13, color: '#991B1B', fontWeight: '600', marginBottom: 4 }}>MODO DEVOLUCIÓN PARCIAL</Text>
-                                    <Text style={{ fontSize: 12, color: '#B91C1C' }}>Ajusta las cantidades que el cliente está devolviendo.</Text>
-                                </View>
-                            ) : (
-                                <>
-                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                                        <Text style={{ color: '#6b7280' }}>Fecha:</Text>
-                                        <Text style={{ fontWeight: '600', color: '#111827' }}>
-                                            {new Date(sale.date).toLocaleDateString("es-ES")}
-                                        </Text>
-                                    </View>
-                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                                        <Text style={{ color: '#6b7280' }}>Hora:</Text>
-                                        <Text style={{ fontWeight: '600', color: '#111827' }}>
-                                            {new Date(sale.date).toLocaleTimeString("es-ES")}
-                                        </Text>
-                                    </View>
-                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                                        <Text style={{ color: '#6b7280' }}>Tipo:</Text>
-                                        <Text style={{
-                                            fontWeight: '600',
-                                            color: sale.tipo === 'RESTOCK' ? '#6B7280' :
-                                                (sale.tipo === 'PAGO' ? '#2563EB' :
-                                                    (sale.tipo === 'DEVOLUCION' ? '#EF4444' : '#16A34A')),
-                                            textTransform: 'capitalize'
-                                        }}>
-                                            {sale.tipo === 'RESTOCK' ? 'Ingreso de Stock' :
-                                                (sale.tipo === 'PAGO' ? 'Cobro de Deuda' :
-                                                    (sale.tipo === 'DEVOLUCION' ? 'Devolución de Venta' : 'Venta Cliente'))}
-                                        </Text>
-                                    </View>
-                                    {sale.clienteNombre && (
-                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                            <Text style={{ color: '#6b7280' }}>Cliente:</Text>
-                                            <Text style={{ fontWeight: '600', color: '#111827' }}>{sale.clienteNombre}</Text>
+                    {!completed ? (
+                        <>
+                            <ScrollView style={{ flex: 1 }}>
+                                <View style={{ marginBottom: 20, padding: 16, backgroundColor: returnMode ? '#FEF2F2' : '#f9fafb', borderRadius: 12, borderWidth: returnMode ? 1 : 0, borderColor: '#FCA5A5' }}>
+                                    {returnMode ? (
+                                        <View>
+                                            <Text style={{ fontSize: 13, color: '#991B1B', fontWeight: '600', marginBottom: 4 }}>MODO DEVOLUCIÓN PARCIAL</Text>
+                                            <Text style={{ fontSize: 12, color: '#B91C1C' }}>Ajusta las cantidades que el cliente está devolviendo.</Text>
                                         </View>
-                                    )}
-                                </>
-                            )}
-                        </View>
-
-                        {sale.tipo !== 'PAGO' && (
-                            <>
-                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827', marginBottom: 12 }}>Productos</Text>
-                                <View style={{ marginBottom: 20 }}>
-                                    {sale.items.map((item, index) => (
-                                        <View key={index} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}>
-                                            <View style={{ width: 36, height: 36, backgroundColor: '#f3f6ff', borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-                                                <Feather name="package" size={18} color="#3b82f6" />
+                                    ) : (
+                                        <>
+                                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                                                <Text style={{ color: '#6b7280' }}>Fecha:</Text>
+                                                <Text style={{ fontWeight: '600', color: '#111827' }}>
+                                                    {new Date(sale.date).toLocaleDateString("es-ES")}
+                                                </Text>
                                             </View>
-                                            <View style={{ flex: 1 }}>
-                                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                                                <Text style={{ color: '#6b7280' }}>Hora:</Text>
+                                                <Text style={{ fontWeight: '600', color: '#111827' }}>
+                                                    {new Date(sale.date).toLocaleTimeString("es-ES")}
+                                                </Text>
+                                            </View>
+                                            {sale.clienteNombre ? (
+                                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                                                    <Text style={{ color: '#6b7280' }}>Cliente:</Text>
+                                                    <Text style={{ fontWeight: '600', color: '#111827' }}>{sale.clienteNombre}</Text>
+                                                </View>
+                                            ) : null}
+                                            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                                <Text style={{ color: '#6b7280' }}>Método:</Text>
+                                                <Text style={{ fontWeight: '600', color: '#111827' }}>{sale.metodoPago?.toUpperCase()}</Text>
+                                            </View>
+                                        </>
+                                    )}
+                                </View>
+
+                                <View style={{ marginBottom: 0 }}>
+                                    <Text style={{ fontSize: 14, fontWeight: '800', color: '#374151', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>
+                                        {sale.tipo === 'PAGO' ? 'Concepto' : 'Productos'}
+                                    </Text>
+                                    {sale.items.map((item, index) => (
+                                        <View key={index} style={{ marginBottom: 12 }}>
+                                            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#f3f4f6', padding: 12 }}>
+                                                <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: '#f9fafb', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                                                    <Feather name={sale.tipo === 'RESTOCK' ? "package" : (sale.tipo === 'PAGO' ? "dollar-sign" : "shopping-cart")} size={20} color="#6B7280" />
+                                                </View>
+
+                                                <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                                                     <View>
                                                         <Text style={{ fontWeight: '600', color: '#374151', fontSize: 15 }}>
                                                             {item.productName}
-                                                            {item.productoMarca && <Text style={{ color: '#2563EB', fontWeight: '500', fontSize: 13 }}> · {item.productoMarca}</Text>}
+                                                            {item.productoMarca ? (
+                                                                <Text style={{ color: '#2563EB', fontWeight: '500', fontSize: 13 }}>
+                                                                    {' · ' + item.productoMarca}
+                                                                </Text>
+                                                            ) : null}
                                                         </Text>
-                                                        {item.productoDescripcion && (
+                                                        {item.productoDescripcion ? (
                                                             <Text style={{ fontSize: 12, color: '#9CA3AF', marginTop: 1 }} numberOfLines={1}>
                                                                 {item.productoDescripcion}
                                                             </Text>
-                                                        )}
+                                                        ) : null}
                                                         <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 2 }}>
                                                             {sale.tipo === 'RESTOCK' ? `Ingreso: ${item.quantity} unidades` : `${item.quantity} x $${item.price}`}
                                                         </Text>
@@ -175,62 +189,75 @@ export const SaleDetailsModal = ({ visible, onClose, sale, onReturn }) => {
                                         </View>
                                     ))}
                                 </View>
-                            </>
-                        )}
-                    </ScrollView>
+                            </ScrollView>
 
-                    <View style={{ borderTopWidth: 2, borderTopColor: '#f3f4f6', paddingTop: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                        <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#111827' }}>
-                            {returnMode ? 'Total a Devolver:' : (sale.tipo === 'RESTOCK' ? 'Total Unidades:' : (sale.tipo === 'PAGO' ? 'Monto Cobrado:' : (sale.tipo === 'DEVOLUCION' ? 'Monto Devuelto:' : 'Total:')))}
-                        </Text>
-                        <Text style={{ fontSize: 24, fontWeight: 'bold', color: (sale.tipo === 'RESTOCK' || sale.tipo === 'PAGO') ? '#2563EB' : (sale.tipo === 'DEVOLUCION' || returnMode ? '#EF4444' : '#10b981') }}>
-                            {returnMode
-                                ? `$${totalToReturn}`
-                                : (sale.tipo === 'RESTOCK'
-                                    ? `${sale.items.reduce((acc, item) => acc + item.quantity, 0)}`
-                                    : `$${sale.total}`)}
-                        </Text>
-                    </View>
-
-                    <View style={{ gap: 8 }}>
-                        {sale.tipo === 'VENTA' && onReturn && !returnMode && (
-                            <TouchableOpacity
-                                style={{ backgroundColor: '#FEE2E2', padding: 16, borderRadius: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}
-                                onPress={() => setReturnMode(true)}
-                            >
-                                <Ionicons name="return-up-back-outline" size={20} color="#EF4444" />
-                                <Text style={{ fontWeight: 'bold', color: '#EF4444' }}>Gestionar Devolución</Text>
-                            </TouchableOpacity>
-                        )}
-
-                        {returnMode && (
-                            <View style={{ flexDirection: 'row', gap: 8 }}>
-                                <TouchableOpacity
-                                    style={{ flex: 1, backgroundColor: '#f3f4f6', padding: 16, borderRadius: 12, alignItems: 'center' }}
-                                    onPress={() => setReturnMode(false)}
-                                >
-                                    <Text style={{ fontWeight: 'bold', color: '#374151' }}>Cancelar</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={{ flex: 2, backgroundColor: totalToReturn > 0 ? '#EF4444' : '#D1D5DB', padding: 16, borderRadius: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}
-                                    onPress={handleReturn}
-                                    disabled={totalToReturn <= 0}
-                                >
-                                    <Ionicons name="checkmark-circle" size={20} color="white" />
-                                    <Text style={{ fontWeight: 'bold', color: 'white' }}>Confirmar Devolución</Text>
-                                </TouchableOpacity>
+                            <View style={{ borderTopWidth: 2, borderTopColor: '#f3f4f6', paddingTop: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                                <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#111827' }}>
+                                    {returnMode ? 'Total a Devolver:' : (sale.tipo === 'RESTOCK' ? 'Total Unidades:' : (sale.tipo === 'PAGO' ? 'Monto Cobrado:' : (sale.tipo === 'DEVOLUCION' ? 'Monto Devuelto:' : 'Total:')))}
+                                </Text>
+                                <Text style={{ fontSize: 24, fontWeight: 'bold', color: (sale.tipo === 'RESTOCK' || sale.tipo === 'PAGO') ? '#2563EB' : (sale.tipo === 'DEVOLUCION' || returnMode ? '#EF4444' : '#10b981') }}>
+                                    {returnMode
+                                        ? `$${totalToReturn}`
+                                        : (sale.tipo === 'RESTOCK'
+                                            ? `${sale.items.reduce((acc, item) => acc + item.quantity, 0)}`
+                                            : `$${sale.total}`)}
+                                </Text>
                             </View>
-                        )}
 
-                        {!returnMode && (
-                            <TouchableOpacity
-                                style={{ backgroundColor: '#f3f4f6', padding: 16, borderRadius: 12, alignItems: 'center' }}
-                                onPress={onClose}
-                            >
-                                <Text style={{ fontWeight: 'bold', color: '#374151' }}>Cerrar</Text>
-                            </TouchableOpacity>
-                        )}
-                    </View>
+                            <View style={{ gap: 8 }}>
+                                {sale.tipo === 'VENTA' && onReturn && !returnMode && (
+                                    <TouchableOpacity
+                                        style={{ backgroundColor: '#FEE2E2', padding: 16, borderRadius: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}
+                                        onPress={() => setReturnMode(true)}
+                                    >
+                                        <Ionicons name="return-up-back-outline" size={20} color="#EF4444" />
+                                        <Text style={{ fontWeight: 'bold', color: '#EF4444' }}>Gestionar Devolución</Text>
+                                    </TouchableOpacity>
+                                )}
+
+                                {returnMode && (
+                                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                                        <TouchableOpacity
+                                            style={{ flex: 1, backgroundColor: '#f3f4f6', padding: 16, borderRadius: 12, alignItems: 'center' }}
+                                            onPress={() => setReturnMode(false)}
+                                            disabled={processing}
+                                        >
+                                            <Text style={{ fontWeight: 'bold', color: '#374151' }}>Cancelar</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={{ flex: 2, backgroundColor: (totalToReturn > 0 && !processing) ? '#EF4444' : '#D1D5DB', padding: 16, borderRadius: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}
+                                            onPress={handleReturn}
+                                            disabled={totalToReturn <= 0 || processing}
+                                        >
+                                            {processing ? (
+                                                <ActivityIndicator color="white" size="small" />
+                                            ) : (
+                                                <Ionicons name="checkmark-circle" size={20} color="white" />
+                                            )}
+                                            <Text style={{ fontWeight: 'bold', color: 'white' }}>
+                                                {processing ? 'Procesando...' : 'Confirmar Devolución'}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
+                                {!returnMode && (
+                                    <TouchableOpacity
+                                        style={{ backgroundColor: '#f3f4f6', paddingHorizontal: 16, paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginTop: 16 }}
+                                        onPress={onClose}
+                                    >
+                                        <Text style={{ fontWeight: 'bold', color: '#374151', fontSize: 16 }}>Cerrar</Text>
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+                        </>
+                    ) : (
+                        <SuccessScreen
+                            title="Devolución Registrada"
+                            message="La devolución de productos se ha realizado correctamente y el stock ha sido actualizado."
+                            primaryButtonText="Cerrar"
+                            onPrimaryAction={onClose}
+                        />
+                    )}
                 </View>
             </View>
         </Modal>

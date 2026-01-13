@@ -48,18 +48,18 @@ export const Sales = ({ sales, onShowSaleModal, onShowBarcodeScanner, onShowSale
 
                 {recentSales.map((sale) => (
                     <TouchableOpacity
-                        key={sale.uuid || sale.id}
+                        key={sale.id}
                         style={styles.saleCard}
                         onPress={() => onShowSaleDetails(sale)}
                     >
                         <View style={[
                             styles.saleIconBox,
-                            sale.tipo === 'PAGO' ? styles.paymentBg : styles.saleBg
+                            sale.tipo === 'PAGO' ? styles.paymentBg : (sale.tipo === 'DEVOLUCION' ? styles.returnBg : styles.saleBg)
                         ]}>
                             <Feather
-                                name={sale.tipo === 'PAGO' ? "arrow-down-left" : "shopping-bag"}
+                                name={sale.tipo === 'PAGO' ? "arrow-down-left" : (sale.tipo === 'DEVOLUCION' ? "rotate-ccw" : "shopping-bag")}
                                 size={18}
-                                color={sale.tipo === 'PAGO' ? "#2563EB" : "#10B981"}
+                                color={sale.tipo === 'PAGO' ? "#2563EB" : (sale.tipo === 'DEVOLUCION' ? "#F59E0B" : "#10B981")}
                             />
                         </View>
 
@@ -68,10 +68,12 @@ export const Sales = ({ sales, onShowSaleModal, onShowBarcodeScanner, onShowSale
                                 <Text style={styles.saleTitle}>
                                     {sale.tipo === 'PAGO'
                                         ? `Pago: ${sale.clienteNombre || 'Cliente'}`
-                                        : `${sale.items?.length || 0} producto${sale.items?.length === 1 ? '' : 's'}`
+                                        : (sale.tipo === 'DEVOLUCION' ? 'DEVOLUCIÓN' : `${sale.items?.length || 0} producto${sale.items?.length === 1 ? '' : 's'}`)
                                     }
                                 </Text>
-                                <Text style={styles.salePrice}>${sale.total}</Text>
+                                <Text style={[styles.salePrice, sale.tipo === 'DEVOLUCION' && { color: '#B91C1C' }]}>
+                                    {sale.tipo === 'DEVOLUCION' ? '-' : ''}${sale.total}
+                                </Text>
                             </View>
 
                             <View style={styles.saleFooter}>
@@ -79,7 +81,7 @@ export const Sales = ({ sales, onShowSaleModal, onShowBarcodeScanner, onShowSale
                                     {new Date(sale.date).toLocaleDateString("es-ES", { day: '2-digit', month: 'short' })} · {new Date(sale.date).toLocaleTimeString("es-ES", { hour: '2-digit', minute: '2-digit' })}
                                 </Text>
                                 <View style={styles.badges}>
-                                    {sale.metodoPago?.toUpperCase() === 'FIADO' && (
+                                    {(sale.metodoPago?.toUpperCase() === 'FIADO' && sale.tipo !== 'DEVOLUCION') && (
                                         <View style={styles.fiadoBadge}>
                                             <Text style={styles.fiadoText}>FIADO</Text>
                                         </View>
@@ -211,6 +213,7 @@ const styles = StyleSheet.create({
     },
     saleBg: { backgroundColor: '#ECFDF5' },
     paymentBg: { backgroundColor: '#EEF2FF' },
+    returnBg: { backgroundColor: '#FFF7ED' },
     saleMain: {
         flex: 1,
     },
@@ -228,7 +231,7 @@ const styles = StyleSheet.create({
     salePrice: {
         fontSize: 16,
         fontWeight: '800',
-        color: '#111827',
+        color: '#B91C1C', // Red for returns
         marginLeft: 8,
     },
     saleFooter: {

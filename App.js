@@ -96,7 +96,8 @@ const MainAppContent = () => {
     handleRegistrarPago,
     movements,
     appMode,
-    toggleAppMode
+    toggleAppMode,
+    handleReturnSale
   } = useBusinessData(user)
 
   useEffect(() => {

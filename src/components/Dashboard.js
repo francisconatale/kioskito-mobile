@@ -64,28 +64,36 @@ export const Dashboard = ({ products, sales, onShowProductModal, onShowSaleModal
                     .reverse()
                     .map((sale) => (
                         <TouchableOpacity key={sale.uuid || sale.id} style={styles.saleItem} onPress={() => onShowSaleDetails(sale)}>
-                            <View style={styles.saleIcon}>
+                            <View style={[
+                                styles.saleIcon,
+                                sale.tipo === 'DEVOLUCION' && { backgroundColor: '#FFF7ED' },
+                                sale.tipo === 'PAGO' && { backgroundColor: '#EEF2FF' }
+                            ]}>
                                 <Feather
-                                    name={sale.tipo === 'PAGO' ? "arrow-down-left" : "shopping-bag"}
+                                    name={sale.tipo === 'PAGO' ? "arrow-down-left" : (sale.tipo === 'DEVOLUCION' ? "rotate-ccw" : "shopping-bag")}
                                     size={18}
-                                    color={sale.tipo === 'PAGO' ? "#2563EB" : "#374151"}
+                                    color={sale.tipo === 'PAGO' ? "#2563EB" : (sale.tipo === 'DEVOLUCION' ? "#F59E0B" : "#374151")}
                                 />
                             </View>
                             <View style={styles.saleMainInfo}>
                                 <Text style={styles.saleTitle}>
                                     {sale.tipo === 'PAGO'
                                         ? `Pago de ${sale.clienteNombre || 'Cliente'}`
-                                        : `${sale.items?.length || 0} ${sale.items?.length === 1 ? "producto" : "productos"}`
+                                        : (sale.tipo === 'DEVOLUCION' ? 'DEVOLUCIÓN' : `${sale.items?.length || 0} ${sale.items?.length === 1 ? "producto" : "productos"}`)
                                     }
                                 </Text>
                                 <Text style={styles.saleTime}>
                                     {new Date(sale.date).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
-                                    {sale.metodoPago?.toUpperCase() === 'FIADO' && " · Fiado"}
+                                    {(sale.metodoPago?.toUpperCase() === 'FIADO' && sale.tipo !== 'DEVOLUCION') && " · Fiado"}
                                 </Text>
                             </View>
                             <View style={styles.salePriceBox}>
-                                <Text style={[styles.salePrice, sale.tipo === 'PAGO' && styles.paymentText]}>
-                                    {sale.tipo === 'PAGO' ? '-' : ''}${sale.total}
+                                <Text style={[
+                                    styles.salePrice,
+                                    sale.tipo === 'PAGO' && styles.paymentText,
+                                    sale.tipo === 'DEVOLUCION' && { color: '#B91C1C' }
+                                ]}>
+                                    {sale.tipo === 'DEVOLUCION' ? '-' : ''}${sale.total}
                                 </Text>
                                 <Ionicons name="chevron-forward" size={14} color="#D1D5DB" />
                             </View>
