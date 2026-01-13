@@ -1,6 +1,7 @@
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert } from "react-native"
 import { Ionicons } from '@expo/vector-icons'
 import { exportData, importData } from '../services/backup'
+import { syncService } from '../services/sync'
 
 export const Menu = ({ onNavigate, appMode, onRefresh, onToggleMode, user, onLogout }) => {
 
@@ -82,7 +83,31 @@ export const Menu = ({ onNavigate, appMode, onRefresh, onToggleMode, user, onLog
             subtitle: appMode === 'ONLINE' ? 'Nube - Datos sincronizados' : 'Dispositivo - Sin internet',
             icon: appMode === 'ONLINE' ? 'cloud-outline' : 'phone-portrait-outline',
             color: appMode === 'ONLINE' ? '#2563EB' : '#D97706',
-            action: onToggleMode
+            action: async () => {
+                const newMode = appMode === 'ONLINE' ? 'OFFLINE' : 'ONLINE';
+                if (newMode === 'ONLINE' && !user) {
+                    alert("Debes iniciar sesión para usar el modo Online.");
+                    return;
+                }
+
+                if (newMode === 'ONLINE') {
+                    // Trigger Sync
+                    try {
+                        alert("Sincronizando datos con la nube...");
+                        const result = await syncService.syncAll();
+                        if (result.up.success && result.down.success) {
+                            alert("Sincronización completada exitosamente.");
+                        } else {
+                            alert("Hubo errores en la sincronización, pero se activó el modo Online.");
+                        }
+                    } catch (e) {
+                        console.error("Sync error in menu:", e);
+                        alert("Error al sincronizar");
+                    }
+                }
+
+                onToggleMode();
+            }
         },
         {
             id: 'backup',
