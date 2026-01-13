@@ -89,7 +89,7 @@ export const SaleDetailsModal = ({ visible, onClose, sale, onReturn }) => {
                     {/* Header */}
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                         <Text style={{ fontSize: 18, fontWeight: '700', color: '#1E293B', fontFamily: 'System' }}>
-                            {returnMode ? 'Gestionar Devolución' : (sale.tipo === 'RESTOCK' ? 'Ingreso de Stock' : (sale.tipo === 'PAGO' ? 'Detalle de Cobro' : (sale.tipo === 'DEVOLUCION' ? 'Detalle de Devolución' : 'Detalle de Venta')))}
+                            {returnMode ? 'Gestionar Devolución' : (sale.tipo === 'RESTOCK' ? 'Ingreso de Stock' : (sale.tipo === 'PAGO' ? 'Detalle de Cobro' : (sale.tipo === 'DEVOLUCION' ? 'Devolución' : 'Detalle de Venta')))}
                         </Text>
                         <TouchableOpacity onPress={onClose} style={{ padding: 4 }}>
                             <Ionicons name="close" size={22} color="#94A3B8" />
@@ -226,7 +226,7 @@ export const SaleDetailsModal = ({ visible, onClose, sale, onReturn }) => {
                                 alignItems: 'center'
                             }}>
                                 <Text style={{ fontSize: 13, fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: 1 }}>
-                                    {returnMode ? 'Monto Crédito' : (sale.tipo === 'RESTOCK' ? 'Unidades' : (sale.tipo === 'PAGO' ? 'Cobrado' : (sale.tipo === 'DEVOLUCION' ? 'Devuelto' : 'Total General')))}
+                                    {returnMode ? 'Monto Crédito' : (sale.tipo === 'RESTOCK' ? 'Unidades' : (sale.tipo === 'PAGO' ? 'Cobrado' : (sale.tipo === 'DEVOLUCION' ? `Devuelto (${sale.items.reduce((acc, item) => acc + item.quantity, 0)} ítems)` : 'Total General')))}
                                 </Text>
                                 <Text style={{
                                     fontSize: 26,
@@ -292,7 +292,7 @@ export const SaleDetailsModal = ({ visible, onClose, sale, onReturn }) => {
                                         style={{ backgroundColor: '#F1F5F9', paddingVertical: 14, borderRadius: 16, alignItems: 'center' }}
                                         onPress={onClose}
                                     >
-                                        <Text style={{ fontWeight: '800', color: '#475569', fontSize: 15 }}>Cerrar Panel</Text>
+                                        <Text style={{ fontWeight: '800', color: '#475569', fontSize: 15 }}>Cerrar</Text>
                                     </TouchableOpacity>
                                 )}
                             </View>
