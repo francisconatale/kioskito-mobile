@@ -15,61 +15,11 @@ export const Account = ({ onLogout, onBack }) => {
     const [saveLoading, setSaveLoading] = useState(false);
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-    const [subscription, setSubscription] = useState(null);
-    const [loadingSub, setLoadingSub] = useState(true);
-
-
     const [resultModal, setResultModal] = useState({ visible: false, title: '', message: '', type: 'success' }); // type: success | error
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [passwordLoading, setPasswordLoading] = useState(false);
-
-    React.useEffect(() => {
-        if (user?.username) {
-            fetchSubscription();
-        }
-    }, [user]);
-
-    const fetchSubscription = async () => {
-        try {
-            setLoadingSub(true);
-            const data = await authAPI.getSubscriptionStatus(user.username);
-            setSubscription(data);
-        } catch (error) {
-            console.error("Error fetching subscription:", error);
-        } finally {
-            setLoadingSub(false);
-        }
-    };
-
-
-
-    // ... (keep handleSave and others)
-
-    const getPlanColor = (plan) => {
-        switch (plan?.toUpperCase()) {
-            case "NEGOCIO":
-                return "#A855F7"; // purple-500
-            case "EMPRENDEDOR":
-                return "#3B82F6"; // blue-500
-            default:
-                return "#22C55E"; // green-500
-        }
-    };
-
-    const getPlanBgColor = (plan) => {
-        switch (plan?.toUpperCase()) {
-            case "NEGOCIO":
-                return "#F3E8FF"; // purple-100
-            case "EMPRENDEDOR":
-                return "#DBEAFE"; // blue-100
-            default:
-                return "#DCFCE7"; // green-100
-        }
-    };
-
-    // ...
 
     return (
         <View style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
@@ -82,54 +32,6 @@ export const Account = ({ onLogout, onBack }) => {
                     <View style={{ width: 40 }} />
                 </View>
 
-                {/* Subscription Card */}
-                <View style={styles.card}>
-                    <Text style={styles.cardTitle}>Mi Suscripción</Text>
-
-                    {loadingSub ? (
-                        <ActivityIndicator color="#2563EB" />
-                    ) : (
-                        <View>
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                                <View>
-                                    <Text style={{ fontSize: 14, color: '#6B7280' }}>Plan Actual</Text>
-                                    <View style={{
-                                        backgroundColor: getPlanBgColor(subscription?.plan),
-                                        paddingHorizontal: 8,
-                                        paddingVertical: 2,
-                                        borderRadius: 4,
-                                        alignSelf: 'flex-start',
-                                        marginTop: 4
-                                    }}>
-                                        <Text style={{
-                                            color: getPlanColor(subscription?.plan),
-                                            fontWeight: 'bold',
-                                            fontSize: 14
-                                        }}>
-                                            {subscription?.plan || 'Free'}
-                                        </Text>
-                                    </View>
-                                </View>
-                                <View style={{ alignItems: 'flex-end' }}>
-                                    <Text style={{ fontSize: 14, color: '#6B7280' }}>Días Restantes</Text>
-                                    <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#111827' }}>
-                                        {subscription?.diasRestantes ?? "-"}
-                                    </Text>
-                                </View>
-                            </View>
-
-                            {subscription?.fechaFin && (
-                                <Text style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 16 }}>
-                                    Vence el: {new Date(subscription.fechaFin).toLocaleDateString('es-AR')}
-                                </Text>
-                            )}
-
-
-                        </View>
-                    )}
-                </View>
-
-                {/* Profile Card */}
                 <View style={[styles.card, { marginTop: 16 }]}>
                     <View style={styles.avatarContainer}>
                         <View style={styles.avatar}>

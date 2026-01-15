@@ -13,9 +13,9 @@ export const Inventory = ({
     onShowRestockModal,
     onRefresh,
     dashboardStats,
-    userPlan
+    user
 }) => {
-    const [activeTab, setActiveTab] = useState("list") // "list" or "movements"
+    const [activeTab, setActiveTab] = useState("list")
     const [searchTerm, setSearchTerm] = useState("")
     const [refreshing, setRefreshing] = useState(false)
 
@@ -35,33 +35,34 @@ export const Inventory = ({
         (m.productoMarca && m.productoMarca.toLowerCase().includes(searchTerm.toLowerCase()))
     )
 
+    const limit = dashboardStats?.productsLimit ?? user?.limiteProductos ?? 30;
+    const count = dashboardStats?.productsCount ?? products.length;
+
     const renderHeader = () => (
         <View style={styles.headerContainer}>
             <View style={styles.headerTop}>
                 <View>
                     <Text style={styles.headerTitle}>Inventario</Text>
-                    {userPlan === 'EMPRENDEDOR' && dashboardStats && (
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                            <View style={{
-                                backgroundColor: dashboardStats.productsCount >= dashboardStats.productsLimit ? '#FEE2E2' : '#E0E7FF',
-                                paddingHorizontal: 8,
-                                paddingVertical: 2,
-                                borderRadius: 6,
-                                flexDirection: 'row',
-                                alignItems: 'center'
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                        <View style={{
+                            backgroundColor: (limit > 0 && count >= limit) ? '#FEE2E2' : '#E0E7FF',
+                            paddingHorizontal: 8,
+                            paddingVertical: 2,
+                            borderRadius: 6,
+                            flexDirection: 'row',
+                            alignItems: 'center'
+                        }}>
+                            <Feather name="package" size={12} color={(limit > 0 && count >= limit) ? '#DC2626' : '#4F46E5'} />
+                            <Text style={{
+                                fontSize: 11,
+                                fontWeight: '700',
+                                marginLeft: 4,
+                                color: (limit > 0 && count >= limit) ? '#DC2626' : '#4F46E5'
                             }}>
-                                <Feather name="package" size={12} color={dashboardStats.productsCount >= dashboardStats.productsLimit ? '#DC2626' : '#4F46E5'} />
-                                <Text style={{
-                                    fontSize: 11,
-                                    fontWeight: '700',
-                                    marginLeft: 4,
-                                    color: dashboardStats.productsCount >= dashboardStats.productsLimit ? '#DC2626' : '#4F46E5'
-                                }}>
-                                    {dashboardStats.productsCount} / {dashboardStats.productsLimit} productos
-                                </Text>
-                            </View>
+                                {count} / {limit === -1 ? 'Ilimitados' : `${limit} productos`}
+                            </Text>
                         </View>
-                    )}
+                    </View>
                 </View>
                 <TouchableOpacity style={styles.barcodeBtn} onPress={onShowBarcodeScanner}>
                     <Ionicons name="barcode-outline" size={22} color="#4F46E5" />

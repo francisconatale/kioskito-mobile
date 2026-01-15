@@ -16,15 +16,16 @@ export const Dashboard = ({ products, sales, onShowProductModal, onShowSaleModal
 
     const [refreshing, setRefreshing] = useState(false)
     const [subscription, setSubscription] = useState(null)
+    const [activatingTrial, setActivatingTrial] = useState(false)
+    const [resultModal, setResultModal] = useState({ visible: false, title: '', message: '', type: 'success' })
 
     useEffect(() => {
         if (user?.username) {
             authAPI.getSubscriptionStatus(user.username)
                 .then(subData => {
                     setSubscription(subData);
-                    // Sync plan if it changed on backend
-                    if (subData.plan && subData.plan !== user.plan) {
-                        const updatedUser = { ...user, plan: subData.plan, trialUsed: subData.trialUsed };
+                    if (subData.plan && (subData.plan !== user.plan || subData.limiteProductos !== user.limiteProductos)) {
+                        const updatedUser = { ...user, plan: subData.plan, trialUsed: subData.trialUsed, limiteProductos: subData.limiteProductos };
                         AsyncStorage.setItem('user_session', JSON.stringify(updatedUser));
                         setUser(updatedUser);
                     }
@@ -32,9 +33,6 @@ export const Dashboard = ({ products, sales, onShowProductModal, onShowSaleModal
                 .catch(console.error)
         }
     }, [user])
-
-    const [activatingTrial, setActivatingTrial] = useState(false)
-    const [resultModal, setResultModal] = useState({ visible: false, title: '', message: '', type: 'success' });
 
     const handleRefresh = useCallback(async () => {
         setRefreshing(true)
@@ -45,9 +43,9 @@ export const Dashboard = ({ products, sales, onShowProductModal, onShowSaleModal
             authAPI.getSubscriptionStatus(user.username)
                 .then(subData => {
                     setSubscription(subData);
-                    // Sync plan on refresh
-                    if (subData.plan && subData.plan !== user.plan) {
-                        const updatedUser = { ...user, plan: subData.plan, trialUsed: subData.trialUsed };
+                    if (subData.plan && (subData.plan !== user.plan || subData.limiteProductos !== user.limiteProductos)) {
+                        console.log("Syncing user plan/limit on refresh...");
+                        const updatedUser = { ...user, plan: subData.plan, trialUsed: subData.trialUsed, limiteProductos: subData.limiteProductos };
                         AsyncStorage.setItem('user_session', JSON.stringify(updatedUser));
                         setUser(updatedUser);
                     }
@@ -58,25 +56,27 @@ export const Dashboard = ({ products, sales, onShowProductModal, onShowSaleModal
     }, [onRefresh, user])
 
     const handleActivateTrial = async () => {
-        if (!user?.username) return;
-
         setActivatingTrial(true);
         try {
-            await authAPI.activateTrial(user.username);
+            const result = await authAPI.activateTrial(user.username);
             setResultModal({
                 visible: true,
                 title: "¡Prueba Activada!",
                 message: "Has activado el Plan Negocio por 30 días gratis.",
                 type: "success"
             });
-            // Refresh subscription and update global user state
+
+            if (result.user) {
+                const updatedUser = result.user;
+                await AsyncStorage.setItem('user_session', JSON.stringify(updatedUser));
+                setUser(updatedUser);
+            }
+
+            // Refresh subscription status
             const subData = await authAPI.getSubscriptionStatus(user.username);
             setSubscription(subData);
 
-            // Update local session for persistence and immediate UI update
-            const updatedUser = { ...user, plan: 'NEGOCIO', trialUsed: true };
-            await AsyncStorage.setItem('user_session', JSON.stringify(updatedUser));
-            setUser(updatedUser);
+            if (onRefresh) onRefresh();
         } catch (error) {
             setResultModal({
                 visible: true,
@@ -100,7 +100,7 @@ export const Dashboard = ({ products, sales, onShowProductModal, onShowSaleModal
             >
                 {/* Subscription Warning */}
                 {subscription && subscription.diasRestantes <= 5 && (
-                    <TouchableOpacity onPress={() => onNavigate("account")} style={{ marginBottom: 20 }}>
+                    <TouchableOpacity onPress={() => onNavigate("subscription")} style={{ marginBottom: 20 }}>
                         <View style={{
                             flexDirection: 'row',
                             alignItems: 'center',

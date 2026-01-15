@@ -75,11 +75,13 @@ export const useBusinessData = (user) => {
     const fetchData = async () => {
         setLoading(true)
         try {
-            await fetchProducts()
-            await fetchSales()
-            await fetchClients()
-            await fetchMovements()
-            await fetchDashboardStats()
+            await Promise.all([
+                fetchProducts(),
+                fetchSales(),
+                fetchClients(),
+                fetchMovements(),
+                fetchDashboardStats()
+            ]);
         } catch (e) {
             console.error("Fetch data error:", e)
         } finally {
@@ -134,7 +136,7 @@ export const useBusinessData = (user) => {
                 // Calculation for offline mode if needed
                 setDashboardStats({
                     productsCount: products.length,
-                    productsLimit: -1, // No limit in offline mode for now or depends on user
+                    productsLimit: user?.limiteProductos || 30, // Use limit from user session
                     salesCount: sales.length,
                     totalRevenue: sales.reduce((sum, s) => sum + (s.total || 0), 0),
                     lowStockCount: products.filter(p => p.stock < 10).length

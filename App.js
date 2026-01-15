@@ -15,6 +15,7 @@ import { SaleDetailsModal } from "./src/components/SaleDetailsModal"
 import { BarcodeScanner } from "./src/components/BarcodeScanner"
 import { BottomNavigation } from "./src/components/BottomNavigation"
 import { ConfirmDialog } from "./src/components/ConfirmDialog"
+import { Subscription } from "./src/components/Subscription"
 import { useBusinessData } from "./src/hooks/useBusinessData"
 
 import { ErrorBoundary } from "./src/components/ErrorBoundary"
@@ -45,7 +46,7 @@ const MainAppContent = () => {
   const slideAnim = useRef(new Animated.Value(0)).current
   const prevTabRef = useRef(activeTab)
 
-  const tabOrder = ["dashboard", "sales", "inventory", "menu", "debtors", "analytics", "account"]
+  const tabOrder = ["dashboard", "sales", "inventory", "menu", "debtors", "analytics", "account", "subscription"]
 
   useEffect(() => {
     if (user && activeTab !== prevTabRef.current) {
@@ -266,9 +267,9 @@ const MainAppContent = () => {
               onDeleteProduct={handleDeleteProductRequest}
               onShowBarcodeScanner={() => handleShowBarcodeScanner("product")}
               onShowRestockModal={() => setShowRestockModal(true)}
-              onRefresh={fetchProducts}
+              onRefresh={fetchData}
               dashboardStats={dashboardStats}
-              userPlan={user?.plan}
+              user={user}
             />
           )}
           {activeTab === "sales" && (
@@ -314,6 +315,9 @@ const MainAppContent = () => {
           )}
           {activeTab === "account" && (
             <Account onLogout={logout} onBack={() => setActiveTab("menu")} />
+          )}
+          {activeTab === "subscription" && (
+            <Subscription onBack={() => setActiveTab("menu")} onRefresh={fetchData} />
           )}
 
           <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />

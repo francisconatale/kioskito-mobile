@@ -51,6 +51,13 @@ export const Menu = ({ onNavigate, appMode, onRefresh, onToggleMode, user, onLog
             subtitle: 'Reportes y rendimiento',
             icon: 'bar-chart-2',
             color: '#10B981'
+        },
+        {
+            id: 'subscription',
+            label: 'Mi Suscripción',
+            subtitle: 'Gestionar plan y límites',
+            icon: 'zap',
+            color: '#F59E0B'
         }
     ];
 

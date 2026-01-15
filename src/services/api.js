@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
-const API_BASE_URL = 'https://kioskito-api-1.onrender.com/api'
+const API_BASE_URL = 'http://192.168.100.4:8080/api'
 
 let onUnauthorizedListener = null;
 
@@ -11,7 +11,6 @@ export const setOnUnauthorizedListener = (listener) => {
 // Generic API request handler
 export const apiRequest = async (endpoint, options = {}) => {
     try {
-        // Get auth token from AsyncStorage
         const token = await AsyncStorage.getItem('auth_token')
 
         const headers = {
@@ -417,5 +416,8 @@ export const authAPI = {
     },
     getDashboardStats: async () => {
         return await apiRequest('/dashboard/stats')
+    },
+    getPlanes: async () => {
+        return await apiRequest('/planes')
     }
 }
