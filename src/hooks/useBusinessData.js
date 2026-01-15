@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react"
-import { productosAPI, ventasAPI, clientesAPI, movimientosStockAPI, setMode, getMode, initService } from "../services/factory"
+import { productosAPI, ventasAPI, clientesAPI, movimientosStockAPI, authAPI, setMode, getMode, initService } from "../services/factory"
 import { syncService } from "../services/sync"
 import { Alert } from "react-native"
 import * as Crypto from 'expo-crypto'
@@ -15,6 +15,7 @@ export const useBusinessData = (user) => {
     const [saleCart, setSaleCart] = useState([])
     const [restockCart, setRestockCart] = useState([])
     const [movements, setMovements] = useState([])
+    const [dashboardStats, setDashboardStats] = useState(null)
 
     const [appMode, setAppMode] = useState('OFFLINE')
     const syncingRef = useRef(false)
@@ -78,6 +79,7 @@ export const useBusinessData = (user) => {
             await fetchSales()
             await fetchClients()
             await fetchMovements()
+            await fetchDashboardStats()
         } catch (e) {
             console.error("Fetch data error:", e)
         } finally {
@@ -123,6 +125,26 @@ export const useBusinessData = (user) => {
         }
     }
 
+    const fetchDashboardStats = async () => {
+        try {
+            if (getMode() === 'ONLINE') {
+                const data = await authAPI.getDashboardStats()
+                setDashboardStats(data)
+            } else {
+                // Calculation for offline mode if needed
+                setDashboardStats({
+                    productsCount: products.length,
+                    productsLimit: -1, // No limit in offline mode for now or depends on user
+                    salesCount: sales.length,
+                    totalRevenue: sales.reduce((sum, s) => sum + (s.total || 0), 0),
+                    lowStockCount: products.filter(p => p.stock < 10).length
+                })
+            }
+        } catch (err) {
+            console.error("Error al cargar estadísticas:", err.message)
+        }
+    }
+
     const searchClients = async (q) => {
         try {
             return await clientesAPI.search(q)
@@ -136,6 +158,14 @@ export const useBusinessData = (user) => {
         if (!newProduct.nombre || !newProduct.precio) {
             console.error("Error: Por favor completa todos los campos obligatorios")
             return { success: false, message: "Por favor completa todos los campos obligatorios" }
+        }
+
+        // Limit check
+        if (dashboardStats && dashboardStats.productsLimit > 0 && dashboardStats.productsCount >= dashboardStats.productsLimit) {
+            return {
+                success: false,
+                message: `Límite de productos alcanzado (${dashboardStats.productsLimit}). Por favor mejora tu plan para agregar más.`
+            }
         }
 
         try {
@@ -260,7 +290,6 @@ export const useBusinessData = (user) => {
         if (!existingItem) return
 
         const product = products.find(p => p.id === productId)
-        // difference > 0 means adding more, so check stock. product.stock here is "remaining stock"
         const qtyDifference = newQuantity - existingItem.quantity
 
         if (qtyDifference > 0 && qtyDifference > product.stock) {
@@ -550,6 +579,7 @@ export const useBusinessData = (user) => {
         movements,
         fetchMovements,
         appMode,
-        toggleAppMode
+        toggleAppMode,
+        dashboardStats
     }
 }

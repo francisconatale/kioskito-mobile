@@ -97,7 +97,8 @@ const MainAppContent = () => {
     movements,
     appMode,
     toggleAppMode,
-    handleReturnSale
+    handleReturnSale,
+    dashboardStats
   } = useBusinessData(user)
 
   useEffect(() => {
@@ -266,6 +267,8 @@ const MainAppContent = () => {
               onShowBarcodeScanner={() => handleShowBarcodeScanner("product")}
               onShowRestockModal={() => setShowRestockModal(true)}
               onRefresh={fetchProducts}
+              dashboardStats={dashboardStats}
+              userPlan={user?.plan}
             />
           )}
           {activeTab === "sales" && (

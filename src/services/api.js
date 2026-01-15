@@ -414,5 +414,8 @@ export const authAPI = {
             method: 'POST',
             body: JSON.stringify({})
         })
+    },
+    getDashboardStats: async () => {
+        return await apiRequest('/dashboard/stats')
     }
 }

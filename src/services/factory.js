@@ -88,6 +88,14 @@ export const cierresAPI = new Proxy({}, {
     }
 });
 
+export const authAPI = new Proxy({}, {
+    get: (_, prop) => {
+        const provider = getProvider();
+        if (!provider.authAPI) return () => Promise.resolve(null);
+        return provider.authAPI[prop];
+    }
+});
+
 // Explicit exports for checks
 export const healthCheck = async () => {
     const provider = getProvider();

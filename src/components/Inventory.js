@@ -11,7 +11,9 @@ export const Inventory = ({
     onEditProduct,
     onShowBarcodeScanner,
     onShowRestockModal,
-    onRefresh
+    onRefresh,
+    dashboardStats,
+    userPlan
 }) => {
     const [activeTab, setActiveTab] = useState("list") // "list" or "movements"
     const [searchTerm, setSearchTerm] = useState("")
@@ -36,7 +38,31 @@ export const Inventory = ({
     const renderHeader = () => (
         <View style={styles.headerContainer}>
             <View style={styles.headerTop}>
-                <Text style={styles.headerTitle}>Inventario</Text>
+                <View>
+                    <Text style={styles.headerTitle}>Inventario</Text>
+                    {userPlan === 'EMPRENDEDOR' && dashboardStats && (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                            <View style={{
+                                backgroundColor: dashboardStats.productsCount >= dashboardStats.productsLimit ? '#FEE2E2' : '#E0E7FF',
+                                paddingHorizontal: 8,
+                                paddingVertical: 2,
+                                borderRadius: 6,
+                                flexDirection: 'row',
+                                alignItems: 'center'
+                            }}>
+                                <Feather name="package" size={12} color={dashboardStats.productsCount >= dashboardStats.productsLimit ? '#DC2626' : '#4F46E5'} />
+                                <Text style={{
+                                    fontSize: 11,
+                                    fontWeight: '700',
+                                    marginLeft: 4,
+                                    color: dashboardStats.productsCount >= dashboardStats.productsLimit ? '#DC2626' : '#4F46E5'
+                                }}>
+                                    {dashboardStats.productsCount} / {dashboardStats.productsLimit} productos
+                                </Text>
+                            </View>
+                        </View>
+                    )}
+                </View>
                 <TouchableOpacity style={styles.barcodeBtn} onPress={onShowBarcodeScanner}>
                     <Ionicons name="barcode-outline" size={22} color="#4F46E5" />
                 </TouchableOpacity>

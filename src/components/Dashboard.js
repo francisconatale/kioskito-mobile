@@ -8,7 +8,7 @@ import { authAPI } from "../services/api"
 import { SuccessScreen } from "./SuccessScreen"
 
 export const Dashboard = ({ products, sales, onShowProductModal, onShowSaleModal, onShowSaleDetails, onRefresh, appMode, onToggleMode, clients, onNavigate }) => {
-    const { user } = useAuth()
+    const { user, setUser } = useAuth()
     const totalSalesToday = calculateTotalSalesToday(sales)
     const realCashToday = calculateRealCashToday(sales)
     const totalInventoryValue = calculateTotalInventoryValue(products)
@@ -20,7 +20,15 @@ export const Dashboard = ({ products, sales, onShowProductModal, onShowSaleModal
     useEffect(() => {
         if (user?.username) {
             authAPI.getSubscriptionStatus(user.username)
-                .then(setSubscription)
+                .then(subData => {
+                    setSubscription(subData);
+                    // Sync plan if it changed on backend
+                    if (subData.plan && subData.plan !== user.plan) {
+                        const updatedUser = { ...user, plan: subData.plan, trialUsed: subData.trialUsed };
+                        AsyncStorage.setItem('user_session', JSON.stringify(updatedUser));
+                        setUser(updatedUser);
+                    }
+                })
                 .catch(console.error)
         }
     }, [user])
@@ -35,7 +43,15 @@ export const Dashboard = ({ products, sales, onShowProductModal, onShowSaleModal
         }
         if (user?.username) {
             authAPI.getSubscriptionStatus(user.username)
-                .then(setSubscription)
+                .then(subData => {
+                    setSubscription(subData);
+                    // Sync plan on refresh
+                    if (subData.plan && subData.plan !== user.plan) {
+                        const updatedUser = { ...user, plan: subData.plan, trialUsed: subData.trialUsed };
+                        AsyncStorage.setItem('user_session', JSON.stringify(updatedUser));
+                        setUser(updatedUser);
+                    }
+                })
                 .catch(console.error)
         }
         setRefreshing(false)
@@ -53,12 +69,14 @@ export const Dashboard = ({ products, sales, onShowProductModal, onShowSaleModal
                 message: "Has activado el Plan Negocio por 30 días gratis.",
                 type: "success"
             });
-            // Refresh subscription
+            // Refresh subscription and update global user state
             const subData = await authAPI.getSubscriptionStatus(user.username);
             setSubscription(subData);
 
-            // Note: We are not implementing full context update here for simplicity, 
-            // but the view will update based on 'subscription' state.
+            // Update local session for persistence and immediate UI update
+            const updatedUser = { ...user, plan: 'NEGOCIO', trialUsed: true };
+            await AsyncStorage.setItem('user_session', JSON.stringify(updatedUser));
+            setUser(updatedUser);
         } catch (error) {
             setResultModal({
                 visible: true,
