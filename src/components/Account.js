@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert, Modal } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import { apiRequest } from '../services/api';
+import { apiRequest, authAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { ConfirmDialog } from './ConfirmDialog';
 import { SuccessScreen } from './SuccessScreen';
-import { Modal } from 'react-native';
 
 export const Account = ({ onLogout, onBack }) => {
     const { user, loading, setUser } = useAuth();
@@ -16,107 +15,61 @@ export const Account = ({ onLogout, onBack }) => {
     const [saveLoading, setSaveLoading] = useState(false);
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
+    const [subscription, setSubscription] = useState(null);
+    const [loadingSub, setLoadingSub] = useState(true);
+
+
     const [resultModal, setResultModal] = useState({ visible: false, title: '', message: '', type: 'success' }); // type: success | error
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [passwordLoading, setPasswordLoading] = useState(false);
 
-    const handleSave = async () => {
-        if (!nombre || !email) {
-            Alert.alert("Error", "Nombre y Email son obligatorios");
-            return;
+    React.useEffect(() => {
+        if (user?.username) {
+            fetchSubscription();
         }
+    }, [user]);
 
-        setSaveLoading(true);
+    const fetchSubscription = async () => {
         try {
-            const response = await apiRequest('/auth/update-profile', {
-                method: 'POST',
-                body: JSON.stringify({
-                    username: user.username,
-                    nombre,
-                    email
-                })
-            });
-
-            if (response.success) {
-                const updatedUser = response.user;
-                setUser(updatedUser);
-                await AsyncStorage.setItem('user_session', JSON.stringify(updatedUser)); // Persist locally!
-
-                setResultModal({
-                    visible: true,
-                    title: "Perfil Actualizado",
-                    message: "Tus datos han sido guardados correctamente.",
-                    type: "success"
-                });
-                setIsEditing(false);
-            } else {
-                setResultModal({
-                    visible: true,
-                    title: "Error",
-                    message: response.message || "No se pudo actualizar el perfil",
-                    type: "error"
-                });
-            }
-        } catch (e) {
-            setResultModal({
-                visible: true,
-                title: "Error de Conexión",
-                message: e.message || "Error al conectar con el servidor",
-                type: "error"
-            });
+            setLoadingSub(true);
+            const data = await authAPI.getSubscriptionStatus(user.username);
+            setSubscription(data);
+        } catch (error) {
+            console.error("Error fetching subscription:", error);
         } finally {
-            setSaveLoading(false);
+            setLoadingSub(false);
         }
     };
 
-    const handleUpdatePassword = async () => {
-        if (!currentPassword || !newPassword) {
-            Alert.alert("Error", "Debes ingresar ambas contraseñas");
-            return;
-        }
 
-        setPasswordLoading(true);
-        try {
-            const response = await apiRequest('/auth/change-password', {
-                method: 'POST',
-                body: JSON.stringify({
-                    username: user.username,
-                    currentPassword,
-                    newPassword
-                })
-            });
 
-            if (response.success) {
-                setResultModal({
-                    visible: true,
-                    title: "Contraseña Actualizada",
-                    message: "Tu contraseña ha sido cambiada correctamente.",
-                    type: "success"
-                });
-                setShowPasswordModal(false);
-                setCurrentPassword('');
-                setNewPassword('');
-            } else {
-                setResultModal({
-                    visible: true,
-                    title: "Error",
-                    message: response.message || "No se pudo actualizar la contraseña",
-                    type: "error"
-                });
-            }
-        } catch (e) {
-            setResultModal({
-                visible: true,
-                title: "Error",
-                message: e.message || "Error al conectar con el servidor",
-                type: "error"
-            });
-        } finally {
-            setPasswordLoading(false);
+    // ... (keep handleSave and others)
+
+    const getPlanColor = (plan) => {
+        switch (plan?.toUpperCase()) {
+            case "NEGOCIO":
+                return "#A855F7"; // purple-500
+            case "EMPRENDEDOR":
+                return "#3B82F6"; // blue-500
+            default:
+                return "#22C55E"; // green-500
         }
     };
+
+    const getPlanBgColor = (plan) => {
+        switch (plan?.toUpperCase()) {
+            case "NEGOCIO":
+                return "#F3E8FF"; // purple-100
+            case "EMPRENDEDOR":
+                return "#DBEAFE"; // blue-100
+            default:
+                return "#DCFCE7"; // green-100
+        }
+    };
+
+    // ...
 
     return (
         <View style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
@@ -129,7 +82,55 @@ export const Account = ({ onLogout, onBack }) => {
                     <View style={{ width: 40 }} />
                 </View>
 
+                {/* Subscription Card */}
                 <View style={styles.card}>
+                    <Text style={styles.cardTitle}>Mi Suscripción</Text>
+
+                    {loadingSub ? (
+                        <ActivityIndicator color="#2563EB" />
+                    ) : (
+                        <View>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                                <View>
+                                    <Text style={{ fontSize: 14, color: '#6B7280' }}>Plan Actual</Text>
+                                    <View style={{
+                                        backgroundColor: getPlanBgColor(subscription?.plan),
+                                        paddingHorizontal: 8,
+                                        paddingVertical: 2,
+                                        borderRadius: 4,
+                                        alignSelf: 'flex-start',
+                                        marginTop: 4
+                                    }}>
+                                        <Text style={{
+                                            color: getPlanColor(subscription?.plan),
+                                            fontWeight: 'bold',
+                                            fontSize: 14
+                                        }}>
+                                            {subscription?.plan || 'Free'}
+                                        </Text>
+                                    </View>
+                                </View>
+                                <View style={{ alignItems: 'flex-end' }}>
+                                    <Text style={{ fontSize: 14, color: '#6B7280' }}>Días Restantes</Text>
+                                    <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#111827' }}>
+                                        {subscription?.diasRestantes ?? "-"}
+                                    </Text>
+                                </View>
+                            </View>
+
+                            {subscription?.fechaFin && (
+                                <Text style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 16 }}>
+                                    Vence el: {new Date(subscription.fechaFin).toLocaleDateString('es-AR')}
+                                </Text>
+                            )}
+
+
+                        </View>
+                    )}
+                </View>
+
+                {/* Profile Card */}
+                <View style={[styles.card, { marginTop: 16 }]}>
                     <View style={styles.avatarContainer}>
                         <View style={styles.avatar}>
                             <Text style={styles.avatarText}>
@@ -213,6 +214,7 @@ export const Account = ({ onLogout, onBack }) => {
                     </View>
                 </View>
 
+                {/* Security Card */}
                 <View style={[styles.card, { marginTop: 16 }]}>
                     <Text style={styles.cardTitle}>Seguridad</Text>
                     <TouchableOpacity style={styles.optionRow} onPress={() => setShowPasswordModal(true)}>

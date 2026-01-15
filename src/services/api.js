@@ -402,3 +402,17 @@ export const movimientosStockAPI = {
 export const healthCheck = async () => {
     return await apiRequest('/health')
 }
+
+// Auth API
+export const authAPI = {
+    getSubscriptionStatus: async (username) => {
+        return await apiRequest(`/auth/subscription-status?username=${username}`)
+    },
+    activateTrial: async (username) => {
+        // Although the body is empty, user is identified by token
+        return await apiRequest(`/auth/activate-trial`, {
+            method: 'POST',
+            body: JSON.stringify({})
+        })
+    }
+}
