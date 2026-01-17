@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react"
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen'
 import { View, Text, SafeAreaView, Platform, StatusBar, Image, Animated } from "react-native"
 import { Dashboard } from "./src/components/Dashboard"
@@ -435,7 +436,7 @@ const MainApp = () => (
   </SafeAreaProvider>
 )
 
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+
 
 const App = () => {
   return (

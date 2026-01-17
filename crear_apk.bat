@@ -24,15 +24,29 @@ if %ERRORLEVEL% GEQ 8 (
 )
 
 echo.
-echo 3. Configurando Android SDK...
+echo 3. Limpiando cache global de Gradle (Reparacion de error CorruptedCacheException)...
+cd /d "%BUILD_DIR%\android"
+call gradlew.bat --stop
+if exist "%USERPROFILE%\.gradle\caches\journal-1" (
+    echo    Eliminando archivo de cache corrupto...
+    rmdir /s /q "%USERPROFILE%\.gradle\caches\journal-1"
+)
+if exist "%USERPROFILE%\.gradle\caches\transforms-3" (
+    echo    Limpiando transforms...
+    rmdir /s /q "%USERPROFILE%\.gradle\caches\transforms-3"
+)
+
+echo.
+echo 4. Configurando Android SDK...
 echo sdk.dir=C:\\Users\\franc\\AppData\\Local\\Android\\Sdk> "%BUILD_DIR%\android\local.properties"
 
 echo.
 echo 4. Iniciando la compilacion con Gradle...
-echo    Esto puede tardar varios minutos.
+echo    Esto puede tardar varios minutos (10-15 min aprox).
+echo    Se ejecutara 'clean' y luego 'assembleRelease'.
 echo.
 cd /d "%BUILD_DIR%\android"
-call gradlew.bat assembleRelease
+call gradlew.bat clean assembleRelease --no-daemon
 
 echo.
 echo ========================================================
